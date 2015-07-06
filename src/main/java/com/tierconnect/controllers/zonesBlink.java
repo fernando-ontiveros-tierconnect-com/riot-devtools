@@ -57,7 +57,7 @@ public class zonesBlink  implements controllerInterface {
 		if (tag == null) {
 			System.out.print(cu.ANSI_BLACK + "\nenter a serialNumber[" + cu.ANSI_GREEN + lastSerialNumber + cu.ANSI_BLACK + "]:");
 			String tagIn = in.nextLine();
-			if (tagIn == "") {
+			if (tagIn.equals("")) {
 				tagIn = lastSerialNumber;
 			} else {
 				tagIn = "000000000000000000000" + tagIn;
