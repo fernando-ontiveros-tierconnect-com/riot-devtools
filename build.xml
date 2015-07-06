@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="qatools" default="all" basedir=".">
+
+    <path id="CLASSPATH">
+        <pathelement path="build/service"/>
+        <pathelement location="dist/FileServiceProvider.jar"/>
+        <pathelement location="."/>
+    </path>
+
+    <target name="clean">
+        <delete dir="../../build/qatools"/>
+        <delete dir="../../build/qatools/dist"/>
+    </target>
+
+    <target name="compile"  description="Compile Filter service provider">
+        <mkdir dir="../../build/qatools" />
+        <mkdir dir="../../build/qatools/service" />
+        <mkdir dir="../../build/qatools/main" />
+
+        <javac srcdir="java"
+               includeantruntime="true"
+               destdir="../../build/qatools/main"
+               fork="yes"
+               debug="on">
+            <compilerarg value="-g"/>
+            <compilerarg value="-Xlint:overrides"/>
+            <compilerarg value="-Xlint:unchecked"/>
+        </javac>
+
+        <!--
+                <javac srcdir="src/main/java"
+                       includeantruntime="true"
+                       destdir="build/main"
+                       fork="yes"
+                       debug="on">
+                    <classpath refid="CLASSPATH"/>
+                    <compilerarg value="-g"/>
+                    <compilerarg value="-Xlint:overrides"/>
+                    <compilerarg value="-Xlint:unchecked"/>
+                </javac>
+                <javac srcdir="src/general"
+                       includeantruntime="true"
+                       destdir="build/general"
+                       fork="yes"
+                       debug="on">
+                    <classpath refid="CLASSPATH"/>
+                    <compilerarg value="-g"/>
+                    <compilerarg value="-Xlint:overrides"/>
+                    <compilerarg value="-Xlint:unchecked"/>
+                </javac>
+        !-->
+    </target>
+
+    <target name="jar" depends="compile">
+        <mkdir dir="../../build/libs" />
+        <jar destfile="../../build/libs/qa.jar" basedir="../../build/qatools/main">
+            <fileset dir="../../build/qatools/main"/>
+            <manifest>
+                <attribute name="Main-Class" value="com.tierconnect.Main"/>
+            </manifest>
+        </jar>
+<!--
+        <jar destfile="dist/ext/FilterServiceProvider.jar" basedir="build/service"/>
+        <jar destfile="dist/ext/GeneralFilter.jar" basedir="build/general">
+            <service type="com.mojix.spi.Filter"
+                     provider="com.mojix.GeneralFilter"/>
+        </jar>
+
+        <jar destfile="dist/FilterDemo.jar" basedir="build/main">
+            <fileset dir="build/main"/>
+            <fileset dir="build/service"/>
+            <manifest>
+                <attribute name="Main-Class" value="com.mojix.FilterDemo"/>
+            </manifest>
+        </jar>
+  !-->
+    </target>
+
+
+    <target name="run">
+        <exec executable="java">
+            <arg line="-Djava.ext.dirs=dist/ext -cp build/libs/qa.jar com.tierconnect.Main"/>
+        </exec>
+    </target>
+
+</project>

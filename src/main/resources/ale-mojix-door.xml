@@ -1,0 +1,6 @@
+                    <member
+                        ale_mojix_ext:direction="%DIR%"
+                        ale_mojix_ext:ts="%TIMESTAMP%"
+                        ale_mojix_ext:logicalReader="%LOGICALREADER%" >
+                        <rawHex>urn:epc:raw:96.x%TAG%</rawHex>
+                    </member>

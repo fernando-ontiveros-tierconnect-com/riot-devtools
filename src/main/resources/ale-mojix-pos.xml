@@ -1,0 +1,9 @@
+		    <member ale_mojix_ext:ts="%TIMESTAMP%"
+                        ale_mojix_ext:logicalReader="%LOGICALREADER%"
+                        ale_mojix_ext:posX="%X%"
+                        ale_mojix_ext:posY="%Y%"
+                        ale_mojix_ext:posZ="%Z%"
+                        ale_mojix_ext:eNode="%ENODE%">
+                        <rawHex>urn:epc:raw:96.x%TAG%</rawHex>
+                        <epc>urn:epc:id:sgln:0000000000.00.284</epc>
+                    </member>
