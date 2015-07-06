@@ -1,0 +1,29 @@
+#StreamToMqtt
+
+streamtomqtt.mqtt.clientId=StreamToMqtt
+#streamtomqtt.rows_per_iteration=2000
+#streamtomqtt.interval_in_msecs=600
+#streamtomqtt.iterations=100
+
+streamtomqtt.rows_per_iteration=1000
+streamtomqtt.interval_in_msecs=800
+streamtomqtt.iterations=1000
+
+#MqttToMongodb
+mqtttomongo.mqtt.clientId=MqttToMongoDB
+mqtttomongo.batch_size = 1000
+#mqtttomongo.batch_size = 1000
+
+
+#mqtt connection
+mqtt.topic        = MqttToMongo
+mqtt.qos          = 0
+mqtt.broker       = tcp://localhost:1883
+#mqtt.broker       = tcp://10.100.0.226:1883
+mqtt.clientId     = defaultClient
+
+#mongo connection
+mongodb.host     = localhost
+#mongodb.host     = 10.100.0.226
+mongodb.port     = 27017
+mongodb.database = riot_main
