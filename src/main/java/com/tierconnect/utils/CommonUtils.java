@@ -241,6 +241,10 @@ public class CommonUtils
     }
 
     public void displayThing(DBObject doc) {
+        if (doc == null) {
+            System.out.println(ANSI_BLUE + "{\n}" + ANSI_BLACK);
+            return;
+        }
         System.out.println(ANSI_BLUE + "{" + ANSI_BLACK );
         Iterator<Map.Entry<String,Object>> it = ((BasicDBObject) doc).entrySet().iterator();
 
@@ -303,7 +307,9 @@ public class CommonUtils
 		while (it.hasNext()) {
 			Map.Entry<String,Object> field;
 			field = it.next();
-
+            if (field.getValue() == null) {
+				continue;
+			}
 			if (field.getValue().getClass().equals(BasicDBObject.class)) {
 				String pad = maxpad+field.getKey();
 				pad = pad.substring(pad.length()-maxlength, pad.length());
@@ -317,7 +323,7 @@ public class CommonUtils
 					if (oldDoc != null && (DBObject)oldDoc.get(field.getKey()) != null) {
 						DBObject oldField = (DBObject) oldDoc.get(field.getKey());
 						Object oldFieldTwo = oldField.get(fieldTwo.getKey());
-						if (!oldFieldTwo.equals(fieldTwo.getValue())) {
+						if (oldFieldTwo != null && !oldFieldTwo.equals(fieldTwo.getValue())) {
 							pad = maxpad + "<old value>";
 							pad = pad.substring(pad.length() - maxlength, pad.length());
 							System.out.println(" " + ANSI_GREEN + pad + " " + ANSI_BLACK + fieldTwo.getKey() + ": " + ANSI_BLUE + oldFieldTwo + ANSI_BLACK);

@@ -57,7 +57,7 @@ public class basicBlink  implements controllerInterface {
 		if (tag == null) {
 			System.out.print(cu.ANSI_BLACK + "\nenter a serialNumber[" + cu.ANSI_GREEN + lastSerialNumber + cu.ANSI_BLACK + "]:");
 			String tagIn = in.nextLine();
-			if (tagIn == "") {
+			if (tagIn.equals("")) {
 				tagIn = lastSerialNumber;
 			} else {
 				tagIn = "000000000000000000000" + tagIn;
@@ -70,7 +70,7 @@ public class basicBlink  implements controllerInterface {
 			//posx
 			System.out.print(cu.ANSI_BLACK + "\nenter locationX[" + cu.ANSI_GREEN + lastPosx + cu.ANSI_BLACK + "]:");
 			String posxIn = in.nextLine();
-			if (posxIn == "") {
+			if (posxIn.equals("")) {
 				posx = lastPosx;
 			} else {
 				posx = Integer.parseInt( posxIn);
@@ -80,7 +80,7 @@ public class basicBlink  implements controllerInterface {
 			//posy
 			System.out.print(cu.ANSI_BLACK + "\nenter locationY[" + cu.ANSI_GREEN + lastPosy + cu.ANSI_BLACK + "]:");
 			String posyIn = in.nextLine();
-			if (posyIn == "") {
+			if (posyIn.equals("")) {
 				posy = lastPosy;
 			} else {
 				posy = Integer.parseInt( posyIn );
@@ -154,6 +154,29 @@ public class basicBlink  implements controllerInterface {
 
 	}
 
+	private void getThingFromMongo() {
+		String tag;
+		StringBuffer sb = new StringBuffer();
+		Scanner in;
+		in = new Scanner(System.in);
+
+		System.out.print(cu.ANSI_BLACK + "\nenter a serialNumber[" + cu.ANSI_GREEN + lastSerialNumber + cu.ANSI_BLACK + "]:");
+		String tagIn = in.nextLine();
+		if (tagIn.equals("")) {
+			tagIn = lastSerialNumber;
+		} else {
+			tagIn = "000000000000000000000" + tagIn;
+		}
+		tag = tagIn.substring(tagIn.length()-21, tagIn.length());
+		lastSerialNumber = tag;
+
+		System.out.println("serialNumber: " + cu.ANSI_BLUE + tag + cu.ANSI_BLACK + "");
+
+		DBObject prevThing = cu.getThing(tag);
+
+		cu.displayThing(prevThing);
+	}
+
 	public void execute() {
 		setup();
 		HashMap<String, String> options = new HashMap<String,String>();
@@ -163,6 +186,7 @@ public class basicBlink  implements controllerInterface {
 		options.put("3", "send 000000000000000000100 and ask position");
 		options.put("4", "send a tag and ask position");
 		options.put("5", "send a tag with random position");
+		options.put("6", "get Thing from Mongo");
 
 		Integer option = 0;
 		while (option != null) {
@@ -182,6 +206,9 @@ public class basicBlink  implements controllerInterface {
 				}
 				if (option == 4) {
 					sendSimpleBlink(null, true);
+				}
+				if (option == 5) {
+					getThingFromMongo();
 				}
 
 				System.out.println(cu.ANSI_BLACK +  "\npress [enter] to continue");
