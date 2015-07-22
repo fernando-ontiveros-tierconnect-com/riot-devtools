@@ -1,0 +1,39 @@
+function () {
+    if ( this.parent != null ) {
+        var fields = {};
+        for ( f in this ) {
+            if (typeof this[f] == "object" && f != "_id" ) {
+                if (this[f] != null && typeof this[f].value != "undefined" ) {
+                    fields[f] = this[f].value ;
+                }
+            } else {
+                fields[f] = this[f];
+            }
+        }
+        emit(
+            this.parent._id,
+            {
+                "parent"   : null,
+                "children" : [fields]
+            }
+        );
+    } else {
+        var fields = {};
+        for ( f in this ) {
+            if (typeof this[f] == "object" && f != "_id" ) {
+                if (this[f] != null && typeof this[f].value != "undefined" ) {
+                    fields[f] = this[f].value ;
+                }
+            } else {
+                fields[f] = this[f];
+            }
+        }
+        emit(
+            this._id,
+            {
+                "parent"   : fields,
+                "children" : []
+            }
+        );
+    }
+}

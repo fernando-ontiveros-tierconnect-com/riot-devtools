@@ -1,0 +1,16 @@
+function (key, values) {
+    var children = [];
+    var parent = null;
+
+    for (var i = 0; i < values.length; i++ ) {
+        for (var j = 0; j < values[i].children.length; j++) {
+            children.push(values[i].children[j]);
+        }
+        if (values[i].parent != null) {
+            parent = values[i].parent;
+        }
+    }
+
+    res = { "parent" : parent, "children" : children } ;
+    return res;
+}

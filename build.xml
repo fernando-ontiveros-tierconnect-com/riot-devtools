@@ -8,8 +8,8 @@
     </path>
 
     <target name="clean">
-        <delete dir="../../build/qatools"/>
-        <delete dir="../../build/qatools/dist"/>
+        <delete dir="../../build/dist"/>
+        <delete dir="../../build/"/>
     </target>
 
     <target name="compile"  description="Compile Filter service provider">

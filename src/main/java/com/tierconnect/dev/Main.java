@@ -44,7 +44,8 @@ public class Main {
 	String cmdClasses[] = {
 			"basicBlink",
 			"zonesBlink",
-			"createSharafThings",
+			//"createSharafThings",
+			"mapreduce",
 			"unknown"
 	};
 
@@ -156,7 +157,7 @@ public class Main {
 	public void run()
 	{
 		cu = new CommonUtils();
-		cu.setTitle("QA Tools");
+		cu.setTitle("Dev Tools");
 
 		initDefaultValues();
 		setup();

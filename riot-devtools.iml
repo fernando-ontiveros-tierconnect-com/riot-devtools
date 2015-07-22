@@ -53,5 +53,7 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="jackson-jaxrs-1.9.12" level="project" />
+    <orderEntry type="library" name="json4s-native_2.10-3.2.5" level="project" />
   </component>
 </module>

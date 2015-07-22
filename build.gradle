@@ -42,7 +42,7 @@ dependencies {
 }
 
 
-task compileQA (type: JavaCompile) {
+task compileDev (type: JavaCompile) {
     source = sourceSets.main.java
     include 'com/tierconnect/**/*.java'
     classpath = sourceSets.main.compileClasspath
