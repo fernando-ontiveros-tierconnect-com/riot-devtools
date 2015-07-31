@@ -263,6 +263,9 @@ public class CommonUtils
         while (it.hasNext()) {
             Map.Entry<String,Object> field;
             field = it.next();
+			if (field.getValue()==null) {
+				continue;
+			}
             if (field.getValue().getClass().equals(String.class)) {
             }
             if (field.getValue().getClass().equals(BasicDBObject.class)) {
@@ -289,6 +292,15 @@ public class CommonUtils
     }
 
 	public void diffThings(DBObject newDoc, DBObject oldDoc) {
+
+		if (newDoc == null && oldDoc != null) {
+			displayThing(oldDoc);
+			return;
+		}
+		if (newDoc == null && oldDoc == null) {
+			System.out.println("thing does not exists!");
+			return;
+		}
 		System.out.println(ANSI_BLUE + "{" + ANSI_BLACK );
 		Iterator<Map.Entry<String,Object>> it = ((BasicDBObject) newDoc).entrySet().iterator();
 

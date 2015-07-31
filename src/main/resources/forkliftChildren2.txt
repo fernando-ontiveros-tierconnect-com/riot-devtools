@@ -1,6 +1,7 @@
 {
   "archived":false,
   "name":"forklift Solar Panel",
+  "thingTypeTemplateId": 1,
   "thingTypeCode":"forkliftSolar",
   "children":[
 

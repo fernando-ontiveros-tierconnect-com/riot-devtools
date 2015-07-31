@@ -1,0 +1,59 @@
+
+var boundDates = db.thingHistory.aggregate( [
+     { $group: {
+         _id: 1 ,
+         min: {$min: "$time" },
+         max: {$max: "$time" } }
+     }
+  ] );
+var dateStart = parseInt( boundDates.result[0].min.getTime() /3600000);
+var dateEnd   = parseInt( boundDates.result[0].max.getTime() /3600000);
+
+
+//var myCursor = db.things.find( { _id : { $lt : 40} } );
+var myCursor = db.things.find( {} );
+
+var drop = db.timeseries.drop();
+
+while (myCursor.hasNext()) {
+    var thing = myCursor.next();
+
+
+    for ( d = dateStart; d <= dateEnd; d++ ) {
+        var date  = new Date( d*3600000 );
+        var year  = NumberInt( date.getUTCFullYear());
+        var month = NumberInt( date.getUTCMonth());
+        var day   = NumberInt( date.getUTCDate());
+        var hour  = NumberInt( date.getUTCHours());
+
+        var noTimeseriesFields = ["_id", "groupTypeId", "groupTypeName", "groupTypeCode", "groupId", "groupCode", "groupName",
+            "thingTypeId", "thingTypeCode", "lastDetectTime", "name", "serialNumber" ];
+        for ( var field in thing ) {
+            if ( noTimeseriesFields.indexOf(field) == -1 ) {
+                var doc = {
+                    "_id"   : {
+                        "id" : thing._id,
+                        "field" : field,
+                        "year"  : year,
+                        "month" : month,
+                        "day"   : day,
+                        "hour"  : hour
+                    },
+                    "serialNumber" : thing.serialNumber,
+                    "lastValue" : null,
+                    "lastDate"  : null,
+                    "matrix"    : {}
+                };
+                db.timeseries.insert( doc );
+            }
+        }
+
+    }
+};
+
+var numThings       = db.things.count({});
+var numTimeseries   = db.timeseries.count({});
+var numThingHistory = db.thingHistory.count({});
+print ("things:     " + numThings + "\ntimeseries: " + numTimeseries + "\nhistory:    " + numThingHistory);
+
+

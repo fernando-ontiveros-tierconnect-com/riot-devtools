@@ -22,6 +22,29 @@ import java.util.Scanner;
  */
 public class basicBlink  implements controllerInterface {
 
+	private void getThingFromMongo() {
+		String tag;
+		StringBuffer sb = new StringBuffer();
+		Scanner in;
+		in = new Scanner(System.in);
+
+		System.out.print(cu.ANSI_BLACK + "\nenter a serialNumber[" + cu.ANSI_GREEN + lastSerialNumber + cu.ANSI_BLACK + "]:");
+		String tagIn = in.nextLine();
+		if (tagIn.equals("")) {
+			tagIn = lastSerialNumber;
+		} else {
+			tagIn = "000000000000000000000" + tagIn;
+		}
+		tag = tagIn.substring(tagIn.length()-21, tagIn.length());
+		lastSerialNumber = tag;
+
+		System.out.println("serialNumber: " + cu.ANSI_BLUE + tag + cu.ANSI_BLACK + "");
+
+		DBObject prevThing = cu.getThing(tag);
+
+		cu.displayThing(prevThing);
+	}
+
 	CommonUtils cu;
 	String lastSerialNumber = "000000000000000000001";
 	Integer lastPosx = 0;
@@ -52,6 +75,7 @@ public class basicBlink  implements controllerInterface {
 		Random r = new Random();
 		Integer posx = 0, posy = 0;
 		String serialNumber = "";
+		String thingTypeCode = "default_rfid_thingtype";
 		String lr = "LR5";
 
 		if (tag == null) {
@@ -62,8 +86,9 @@ public class basicBlink  implements controllerInterface {
 			} else {
 				tagIn = "000000000000000000000" + tagIn;
 			}
-            tag = tagIn.substring(tagIn.length()-21, tagIn.length());
+			tag = tagIn.substring(tagIn.length()-21, tagIn.length());
 			lastSerialNumber = tag;
+
 		}
 
 		if (random == null) {
@@ -152,29 +177,6 @@ public class basicBlink  implements controllerInterface {
 		}
 
 
-	}
-
-	private void getThingFromMongo() {
-		String tag;
-		StringBuffer sb = new StringBuffer();
-		Scanner in;
-		in = new Scanner(System.in);
-
-		System.out.print(cu.ANSI_BLACK + "\nenter a serialNumber[" + cu.ANSI_GREEN + lastSerialNumber + cu.ANSI_BLACK + "]:");
-		String tagIn = in.nextLine();
-		if (tagIn.equals("")) {
-			tagIn = lastSerialNumber;
-		} else {
-			tagIn = "000000000000000000000" + tagIn;
-		}
-		tag = tagIn.substring(tagIn.length()-21, tagIn.length());
-		lastSerialNumber = tag;
-
-		System.out.println("serialNumber: " + cu.ANSI_BLUE + tag + cu.ANSI_BLACK + "");
-
-		DBObject prevThing = cu.getThing(tag);
-
-		cu.displayThing(prevThing);
 	}
 
 	public void execute() {

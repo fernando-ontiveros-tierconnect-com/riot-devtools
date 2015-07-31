@@ -2,6 +2,7 @@
   "archived":false,
   "name":"forklift battery",
   "thingTypeCode":"forkliftBattery",
+  "thingTypeTemplateId": 1,
   "children":[
 
   ],

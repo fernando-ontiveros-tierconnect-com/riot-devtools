@@ -2,10 +2,19 @@
   "archived":false,
   "name":"forklift",
   "thingTypeCode":"forklift",
+  "thingTypeTemplateId": 1,
   "children":[
 
   ],
   "group.id":3,
+  "group" : {
+    "archived": false,
+    "code": "SM",
+    "treeLevel": 3,
+    "name": "Santa Monica",
+    "description": null,
+    "id": 3
+  },
   "autoCreate":true,
   "fields":[
     {

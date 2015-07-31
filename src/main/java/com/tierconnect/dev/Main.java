@@ -44,8 +44,9 @@ public class Main {
 	String cmdClasses[] = {
 			"basicBlink",
 			"zonesBlink",
-			//"createSharafThings",
 			"mapreduce",
+			//"createSharafThings",
+			"fixSharaf",
 			"unknown"
 	};
 

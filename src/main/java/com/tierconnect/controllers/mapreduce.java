@@ -3,8 +3,10 @@ package com.tierconnect.controllers;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.mongodb.MapReduceCommand;
 import com.mongodb.MapReduceOutput;
@@ -28,6 +30,7 @@ import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -159,8 +162,13 @@ public class mapreduce implements controllerInterface
 			TypeReference<HashMap<String,Object>> typeRef
 					= new TypeReference<HashMap<String,Object>>() {};
 
-			res = mapper.readValue(resp, typeRef);
-			System.out.println("Got " + res);
+			try {
+				res = mapper.readValue(resp, typeRef);
+				System.out.println("Got " + res);
+			} catch (Exception e) {
+
+			}
+
 
 		}
 		finally
@@ -289,6 +297,7 @@ public class mapreduce implements controllerInterface
 	public void createThings()
 	{
 		String tag;
+		Integer delayBetweenThings = 1000;
 		StringBuffer sb = new StringBuffer();
 		Scanner in;
 		in = new Scanner(System.in);
@@ -315,14 +324,26 @@ public class mapreduce implements controllerInterface
 		lastQuantity = tagIn;
 		Long quantity = Long.parseLong( lastQuantity);
 
+		System.out.print(cu.ANSI_BLACK + "\nHow many miliseconds (ms) between each blink ?[" + cu.ANSI_GREEN + delayBetweenThings + cu.ANSI_BLACK + "]:");
+		tagIn = in.nextLine();
+		if (tagIn.equals("")) {
+			//delayBetweenThings = delayBetweenThings;
+		} else {
+			delayBetweenThings = Integer.parseInt( tagIn );
+		}
+
 		errores = 0L;
 		created = 0L;
+		TimerUtils tu = new TimerUtils();
+		tu.mark();
 
-		for (Long i=0L; i < quantity/10; i++) {
+		for (Long i=0L; i < quantity/3/100; i++) {
 			//createOneThing();
-			createTenThings();
+			createHundredThings(delayBetweenThings);
+			tu.mark();
+			System.out.println("      created:" + created + "  errores:" + errores + " time:" + tu.getLastDelt() + " ms.");
 		}
-		System.out.println("TOTAL created:" + created + "  errores:" + errores);
+		System.out.println("TOTAL created:" + created + "  errores:" + errores + " time:" + tu.getTotalDelt() + " ms.");
 
 	}
 
@@ -470,7 +491,7 @@ public class mapreduce implements controllerInterface
 		}
 	}
 
-	public void createTenThings()
+	public void createHundredThings(Integer delayBetweenThings)
 	{
 		HashMap<String,Object> res;
 
@@ -538,7 +559,7 @@ public class mapreduce implements controllerInterface
 				msg += serial3 + "," + time + ",lastDetectTime,1436985931348\n";
 			}
 			mq.publishSyncMessage(topic, msg);
-			cu.sleep(1000 );
+			cu.sleep(delayBetweenThings );
 			created += 100;
 
 			String url;
@@ -559,7 +580,7 @@ public class mapreduce implements controllerInterface
 						} else {
 							System.out.println("retry # " + (10 - times) + " en endpoint para serial: " + castSerialNumber(baseSerial + 100 + i));
 							times--; //retry only 10 times, and then continue
-							cu.sleep(1 + (10 - times) * 100);
+							cu.sleep(1 + (10 - times) * delayBetweenThings/10);
 							if (times <= 0) {
 								repeat = false;
 								errores ++;
@@ -578,7 +599,7 @@ public class mapreduce implements controllerInterface
 					try {
 						url = "http://localhost:8080/riot-core-services/api/thing/" + castSerialNumber(baseSerial + 200 +i) + "/setParent/" + castSerialNumber(baseSerial + i);
 						res = httpPostMessage(url, "");
-						cu.sleep(1 + (10 - times) * 100);
+						cu.sleep(1 + (10 - times) * delayBetweenThings/10);
 						if (res.get("modifiedTime") != null) {
 							repeat = false;
 							created ++;
@@ -603,13 +624,185 @@ public class mapreduce implements controllerInterface
 		}
 	}
 
+	private void sendChangeMessage( Integer sequenceNumber, String serialNumber, String thingType, Integer delayBetweenThings)
+	{
+
+		String topic = "/v1/data/ALEB/" + thingType;
+		StringBuffer msg = new StringBuffer();
+		msg.append(" sn," + sequenceNumber + "\n");
+		msg.append(",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n");
+		Long time = new Date().getTime();
+		Random r = new Random();
+
+		if (thingType.equals("forklift")) {
+			msg.append(serialNumber + "," + time + ",lastDetectTime," + time + "\n");
+			msg.append(serialNumber + "," + time + ",brand," + getRandomBrand() + "\n");
+			msg.append(serialNumber + "," + time + ",status," + getRandomStatus() + "\n");
+			msg.append(serialNumber + "," + time + ",usage," + getRandomUsage() + "\n");
+		} else  {
+			msg.append(serialNumber + "," + time + ",location,-118.44395517462448;34.04811656588989;0.0\n");
+			msg.append(serialNumber + "," + time + ",locationXYZ," + r.nextInt(499) + ".0;" + r.nextInt(499) + ".0;0.0\n");
+			msg.append(serialNumber + "," + time + ",logicalReader,LR" + r.nextInt(10) + "\n");
+			msg.append(serialNumber + "," + time + ",lastDetectTime," + time + "\n");
+		}
+		mq.publishSyncMessage(topic, msg.toString());
+		if(delayBetweenThings > 0)
+		{
+			cu.sleep( delayBetweenThings );
+		}
+
+	}
+
+	private void changeThings( Boolean allThings )
+	{
+		String tag;
+		StringBuffer sb = new StringBuffer();
+		Scanner in;
+		in = new Scanner(System.in);
+		Long thingsToChange = 0L;
+		Integer delayBetweenThings = 10;
+
+		System.out.print(cu.ANSI_BLACK + "\nHow many things wants to change?[" + cu.ANSI_GREEN + "1000" + cu.ANSI_BLACK + "]:");
+		String tagIn = in.nextLine();
+		if (tagIn.equals("")) {
+			tagIn = "1000";
+		} else {
+			tagIn = "" + Long.parseLong(tagIn);
+		}
+		thingsToChange = Long.parseLong(tagIn);
+
+		System.out.print(cu.ANSI_BLACK + "\nHow many miliseconds (ms) between each blink ?[" + cu.ANSI_GREEN + delayBetweenThings + cu.ANSI_BLACK + "]:");
+		tagIn = in.nextLine();
+		if (tagIn.equals("")) {
+			//delayBetweenThings = delayBetweenThings;
+		} else {
+			delayBetweenThings = Integer.parseInt( tagIn );
+		}
+
+		System.out.print(cu.ANSI_BLACK + "\nChanging " + thingsToChange + " things with a delay of " + delayBetweenThings + " ms.");
+
+		//get the max number of _id
+		Long maxId = 0L;
+		String serialNumber;
+		String thingType;
+		Random random = new Random();
+
+		DBObject sortby = new BasicDBObject("_id", -1);
+		DBCursor cursor = thingsCollection.find().sort(sortby).limit(1);
+		try {
+			if (cursor.hasNext()) {
+				cursor.next();
+				maxId = Long.parseLong(cursor.curr().get("_id").toString());
+			}
+		} finally {
+			cursor.close();
+		}
+		if (maxId == 0 ) {
+			System.out.println("error or zero documents in collection 'things' ");
+			return;
+		}
+
+		System.out.println("The max value for _id is " + maxId);
+
+		for (Integer i = 0; i < thingsToChange; ) {
+			DBObject filterById = new BasicDBObject("_id", random.nextLong()%maxId);
+			cursor = thingsCollection.find(filterById).limit(1);
+			try {
+				if (cursor.hasNext()) {
+					cursor.next();
+					serialNumber = cursor.curr().get("serialNumber").toString();
+					thingType    = cursor.curr().get("thingTypeCode").toString();
+					if ( allThings || !thingType.equals( "forklift") )
+					{
+						System.out.println( i + " " + serialNumber + " " + thingType );
+						sendChangeMessage( i, serialNumber, thingType, delayBetweenThings );
+						i ++;
+					}
+				}
+			} finally {
+				cursor.close();
+			}
+
+		}
+
+
+	}
+
+	public void incrementalMR()
+	{
+		DBCursor cursor;
+		DBCollection mrlogsCollection = cu.db.getCollection("mrlogs");
+		BasicDBList inList = new BasicDBList();
+		BasicDBList inTypes = new BasicDBList();
+		inTypes.add("forklift");
+		inTypes.add("forkliftBattery");
+		inTypes.add("forkliftSolar");
+		try {
+			DBObject filterById = new BasicDBObject("_id", new BasicDBObject("$in", inTypes));
+			cursor = mrlogsCollection.find(filterById);
+			try {
+				while (cursor.hasNext()) {
+					cursor.next();
+					BasicDBList childrenList = (BasicDBList) cursor.curr().get("children");
+					Iterator<Object> it = childrenList.iterator();
+					while (it.hasNext()) {
+						inList.add(it.next());
+					}
+					DBObject rmQuery = new BasicDBObject("_id", new BasicDBObject("$in", inTypes));
+					mrlogsCollection.findAndRemove(rmQuery);
+				}
+			} finally {
+				cursor.close();
+			}
+
+			System.out.println("there are " + inList.size() + " thing Ids in the log");
+
+			TimerUtils tu = new TimerUtils();
+			tu.mark();
+			String childrenMap = read( "/childrenMap.txt" );
+			String childrenReduce = read( "/childrenReduce.txt" );
+
+			DBObject query = new BasicDBObject( "_id", new BasicDBObject("$in", inList));
+
+			MapReduceCommand cmd = new MapReduceCommand(
+					thingsCollection,
+					childrenMap,
+					childrenReduce,
+					"mr_forklift",
+					MapReduceCommand.OutputType.REDUCE,
+					query
+			);
+
+			MapReduceOutput out = thingsCollection.mapReduce(cmd);
+
+			tu.mark();
+
+			System.out.println("Input  rows: " + out.getInputCount() );
+			System.out.println("Emit   rows: " + out.getEmitCount() );
+			System.out.println("Output rows: " + out.getOutputCount() );
+
+			//for (DBObject o : out.results()) {
+			//	System.out.println(o.toString());
+			//}
+
+			//timer
+			System.out.println("map reduced in " + tu.getLastDelt() + " ms ");
+		} catch (IOException e) {
+			System.out.println(e.getCause());
+		}
+	}
+
+
 	public void execute() {
 		setup();
 		HashMap<String, String> options = new HashMap<String,String>();
 
 		options.put("1", "create thing types for Parent-Child test");
 		options.put("2", "create 100k things for Parent-Child test");
- 		options.put("3", "execute MR for Parent-Children");
+		options.put("3", "execute MR for Parent-Children");
+		options.put("4", "change 1000 things ");
+		options.put("5", "change 1000 child things only");
+		options.put("6", "execute incremental MR");
 		//options.put("4", "delete things and thingtypes");
 
 		Integer option = 0;
@@ -626,7 +819,13 @@ public class mapreduce implements controllerInterface
 					executeMR();
 				}
 				if (option == 3) {
-					//executeMR();
+					changeThings(true);
+				}
+				if (option == 4) {
+					changeThings(false);
+				}
+				if (option == 5) {
+					incrementalMR();
 				}
 
 				System.out.println(cu.ANSI_BLACK +  "\npress [enter] to continue");
