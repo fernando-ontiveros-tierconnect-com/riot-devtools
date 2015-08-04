@@ -728,6 +728,50 @@ public class mapreduce implements controllerInterface
 
 	}
 
+	private void changeOneThing()
+	{
+		StringBuffer sb = new StringBuffer();
+		Scanner in;
+		in = new Scanner(System.in);
+		Long thingsToChange = 0L;
+		Integer delayBetweenThings = 10;
+
+		System.out.print(cu.ANSI_BLACK + "\nserialNumber[" + cu.ANSI_GREEN + lastSerialNumber + cu.ANSI_BLACK + "]:");
+		String tagIn = in.nextLine();
+		if (tagIn.equals("")) {
+			tagIn = lastSerialNumber;
+		} else {
+			tagIn = "" + tagIn;
+		}
+
+		String serialNumber = castSerialNumber(Long.parseLong( tagIn ));
+        lastSerialNumber = serialNumber;
+
+		System.out.print(cu.ANSI_BLACK + "\nChanging the thing " + serialNumber );
+
+		//get the max number of _id
+		Long maxId = 0L;
+		String thingType = "";
+
+		DBObject query = new BasicDBObject("serialNumber", serialNumber);
+		DBCursor cursor = thingsCollection.find( query );
+		try {
+			if (cursor.hasNext()) {
+				cursor.next();
+				thingType = cursor.curr().get("thingTypeCode").toString();
+			}
+		} finally {
+			cursor.close();
+		}
+		if (thingType.equals( "" ) ) {
+			System.out.println("error or zero documents in collection 'things' ");
+			return;
+		}
+
+		sendChangeMessage( 1, serialNumber, thingType, 0 );
+
+	}
+
 	public void incrementalMR()
 	{
 		DBCursor cursor;
@@ -802,7 +846,8 @@ public class mapreduce implements controllerInterface
 		options.put("3", "execute MR for Parent-Children");
 		options.put("4", "change 1000 things ");
 		options.put("5", "change 1000 child things only");
-		options.put("6", "execute incremental MR");
+		options.put("6", "change 1 things");
+		options.put("7", "execute incremental MR");
 		//options.put("4", "delete things and thingtypes");
 
 		Integer option = 0;
@@ -825,6 +870,9 @@ public class mapreduce implements controllerInterface
 					changeThings(false);
 				}
 				if (option == 5) {
+					changeOneThing();
+				}
+				if (option == 6) {
 					incrementalMR();
 				}
 
