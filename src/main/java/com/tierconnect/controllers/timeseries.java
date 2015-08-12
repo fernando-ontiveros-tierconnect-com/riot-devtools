@@ -1,5 +1,6 @@
 package com.tierconnect.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BulkWriteOperation;
@@ -12,6 +13,8 @@ import com.tierconnect.utils.MqttUtils;
 import com.tierconnect.utils.TimerUtils;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -42,7 +45,7 @@ public class timeseries  implements controllerInterface
 	String strYear   = "2015";
 	String strMonth  = "7"; //zero based
 	String strDay    = "1";
-	String strHour   = "8";
+	String strHour   = "2";
 	String strMinute = "0";
 	String strSecond = "0";
 
@@ -233,11 +236,32 @@ public class timeseries  implements controllerInterface
 		*/
 	}
 
+	public void bsonExamples()
+	{
+		//create dummy POJO
+		Person bob = new Person();
+		bob.setName("Bob");
+
+		//serialize data
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ObjectMapper mapper = new ObjectMapper(new BsonFactory());
+		mapper.writeValue(baos, bob);
+
+		//deserialize data
+		ByteArrayInputStream bais = new ByteArrayInputStream(
+				baos.toByteArray());
+		Person clone_of_bob = mapper.readValue( bais, Person.class);
+
+		assert bob.getName().equals(clone_of_bob.getName());
+
+	}
+
 	public void execute() {
 		setup();
 		HashMap<String, String> options = new HashMap<String,String>();
 
 		options.put("1", "simple timeserie report");
+		options.put("2", "bson examples");
 
 		Integer option = 0;
 		while (option != null) {
@@ -245,6 +269,9 @@ public class timeseries  implements controllerInterface
 			if (option != null) {
 				if (option == 0) {
 					timeserieReport();
+				}
+				if (option == 1) {
+					bsonExamples();
 				}
 
 				System.out.println(cu.ANSI_BLACK +  "\npress [enter] to continue");

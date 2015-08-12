@@ -712,7 +712,7 @@ public class mapreduce implements controllerInterface
 					cursor.next();
 					serialNumber = cursor.curr().get("serialNumber").toString();
 					thingType    = cursor.curr().get("thingTypeCode").toString();
-					if ( allThings || !thingType.equals( "forklift") )
+					if ( allThings || thingType.equals( "forkliftBattery") || thingType.equals( "forkliftSolar") )
 					{
 						System.out.println( i + " " + serialNumber + " " + thingType );
 						sendChangeMessage( i, serialNumber, thingType, delayBetweenThings );
@@ -841,7 +841,7 @@ public class mapreduce implements controllerInterface
 		setup();
 		HashMap<String, String> options = new HashMap<String,String>();
 
-		options.put("1", "create thing types for Parent-Child test");
+		options.put("1", "create Thing Types for Parent-Child test");
 		options.put("2", "create 100k things for Parent-Child test");
 		options.put("3", "execute MR for Parent-Children");
 		options.put("4", "change 1000 things ");

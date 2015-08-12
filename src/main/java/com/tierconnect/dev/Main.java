@@ -45,8 +45,8 @@ public class Main {
 			"basicBlink",
 			"zonesBlink",
 			"mapreduce",
-			//"createSharafThings",
 			"timeseries",
+			"createSharafThings",
 			"unknown"
 	};
 
