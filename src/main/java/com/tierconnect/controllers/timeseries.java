@@ -1,5 +1,7 @@
 package com.tierconnect.controllers;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
@@ -11,6 +13,8 @@ import com.tierconnect.dev.controllerInterface;
 import com.tierconnect.utils.CommonUtils;
 import com.tierconnect.utils.MqttUtils;
 import com.tierconnect.utils.TimerUtils;
+import de.undercouch.bson4jackson.BsonFactory;
+import de.undercouch.bson4jackson.BsonGenerator;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -22,7 +26,9 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 /**
@@ -48,6 +54,7 @@ public class timeseries  implements controllerInterface
 	String strHour   = "2";
 	String strMinute = "0";
 	String strSecond = "0";
+	String lastSerialNumber = "000000000000000010001";
 
 	List<Long> arrayGroupId = new ArrayList<Long>();
 	List<Long> arrayThingTypeId = new ArrayList<Long>();
@@ -238,21 +245,79 @@ public class timeseries  implements controllerInterface
 
 	public void bsonExamples()
 	{
-		//create dummy POJO
-		Person bob = new Person();
-		bob.setName("Bob");
+
+		String serialNumber = "000000000000000000000" + cu.prompt ( "enter a serialNumber ", lastSerialNumber);
+    	serialNumber = serialNumber.substring(serialNumber.length()-21, serialNumber.length());
+
+		DBObject prevThing = cu.getThing(serialNumber);
+		cu.displayThing(prevThing);
 
 		//serialize data
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		ObjectMapper mapper = new ObjectMapper(new BsonFactory());
-		mapper.writeValue(baos, bob);
+		ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
+
+		BsonFactory factory = new BsonFactory();
+		factory.enable( BsonGenerator.Feature.ENABLE_STREAMING);
+
+		ObjectMapper mapper = new ObjectMapper(factory);
+		try {
+			mapper.writeValue(baos, prevThing);
+		} catch( IOException e ) {
+			System.out.println ( e );
+		}
 
 		//deserialize data
-		ByteArrayInputStream bais = new ByteArrayInputStream(
-				baos.toByteArray());
-		Person clone_of_bob = mapper.readValue( bais, Person.class);
+		Map<String,Object> clone_of_thing = null;
+		BasicDBObject clone = null;
+		ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+		try
+		{
+			clone  = mapper.readValue(baos.toByteArray(), BasicDBObject.class);
+		} catch( JsonParseException e ) {
+			System.out.println(e);
+		} catch( JsonMappingException e ) {
+			System.out.println(e);
+		} catch( IOException e ) {
+			System.out.println(e);
+		}
 
-		assert bob.getName().equals(clone_of_bob.getName());
+		Iterator<Map.Entry<String,Object>> it = clone.entrySet().iterator();
+		BasicDBObject cloned = new BasicDBObject(  );
+		while (it.hasNext()) {
+			Map.Entry<String, Object> pair = it.next();
+
+			if ( pair.getValue().getClass().toString().equals( "class java.util.LinkedHashMap")) {
+				BasicDBObject field = new BasicDBObject(  );
+				Map<String, Object> pairValue = (Map<String, Object>)pair.getValue();
+
+				Iterator<Map.Entry<String,Object>> itField = pairValue.entrySet().iterator();
+				while (itField.hasNext()) {
+					Map.Entry<String, Object> pairField = itField.next();
+
+					System.out.println( pairField.getValue().getClass().toString());
+
+					//a hack to allow time field convert to Date
+					if ( pairField.getValue().getClass().toString().equals( "class java.lang.Long") &&
+							pairField.getKey().toString().equals("time")) {
+						field.append( pairField.getKey(), new Date( Long.valueOf( pairField.getValue().toString() )) );
+					} else
+					{
+						field.append( pairField.getKey(), pairField.getValue() );
+					}
+				}
+				cloned.append( pair.getKey(), field );
+
+			} else
+			{
+				cloned.append( pair.getKey(), pair.getValue() );
+			}
+
+		}
+
+		System.out.print( "cloned:" );
+        cu.displayThing( cloned );
+
+		System.out.print( "diff:" );
+		cu.diffThings( cloned, prevThing);
 
 	}
 
@@ -262,6 +327,7 @@ public class timeseries  implements controllerInterface
 
 		options.put("1", "simple timeserie report");
 		options.put("2", "bson examples");
+		options.put("4", "bson examples");
 
 		Integer option = 0;
 		while (option != null) {

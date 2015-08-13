@@ -379,4 +379,19 @@ public class CommonUtils
         return doc;
     }
 
+	public String prompt(String title, String value)
+	{
+		StringBuffer sb = new StringBuffer();
+		Scanner in;
+		in = new Scanner( System.in );
+
+		System.out.print( ANSI_BLACK + "\n" + title + "[" + ANSI_GREEN + value + ANSI_BLACK + "]:" );
+		String tagIn = in.nextLine();
+		if( tagIn.equals( "" ) )
+		{
+			tagIn = value;
+		}
+		return tagIn;
+	}
+
 }

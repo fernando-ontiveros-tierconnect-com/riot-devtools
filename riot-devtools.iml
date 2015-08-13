@@ -55,5 +55,6 @@
     </orderEntry>
     <orderEntry type="library" name="jackson-jaxrs-1.9.12" level="project" />
     <orderEntry type="library" name="json4s-native_2.10-3.2.5" level="project" />
+    <orderEntry type="library" name="bson4jackson-2.5.0" level="project" />
   </component>
 </module>
