@@ -9,6 +9,8 @@ import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
+import com.mongodb.MongoException;
+import com.mongodb.WriteConcern;
 import com.tierconnect.dev.controllerInterface;
 import com.tierconnect.utils.CommonUtils;
 import com.tierconnect.utils.MqttUtils;
@@ -44,16 +46,19 @@ public class timeseries  implements controllerInterface
 
 	MqttUtils mq;
 
+	int  TIMESERIES_PER_SEGMENT = 100;
+
 	//local variables
 	String groupId     = "3";
 	String thingTypeId = "6,7,8";
 	String fieldName   = "zone, brand, location, locationXYZ";
 	String strYear   = "2015";
-	String strMonth  = "7"; //zero based
+	String strMonth  = "8"; //zero based
 	String strDay    = "1";
 	String strHour   = "2";
 	String strMinute = "0";
 	String strSecond = "0";
+	String outputReport = "report";
 	String lastSerialNumber = "000000000000000010001";
 
 	List<Long> arrayGroupId = new ArrayList<Long>();
@@ -94,9 +99,9 @@ public class timeseries  implements controllerInterface
 		return sb.toString();
 	}
 
-	private void executeTimeserieReport()
+	private void executeTimeserieReport(String outputReport, Date dateReport)
 	{
-		outputCollection = cu.db.getCollection("report");
+		outputCollection = cu.db.getCollection(outputReport);
 		outputCollection.drop();
 
 		arrayGroupId.add( 3L );
@@ -108,30 +113,24 @@ public class timeseries  implements controllerInterface
 		arrayFieldnames.add("locationXYZ");
 		arrayFieldnames.add("brand");
 
-		int year   = Integer.parseInt(strYear);
-		int month  = Integer.parseInt(strMonth);
-		int day    = Integer.parseInt(strDay);
-		int hour   = Integer.parseInt(strHour);
-		int minute = Integer.parseInt(strMinute);
-		int second = Integer.parseInt(strSecond);
-
-		Calendar c = Calendar.getInstance();
-		c.set(year, month, day, hour, minute, second);
-
 		TimerUtils tu = new TimerUtils();
 		Integer bulkOperations = 0;
 		Long totalDocs = 0L;
 		tu.mark();
 
-		Long reportDate = c.getTime().getTime();
+		System.out.println("Generate Report for " + dateReport );
 
-		BasicDBObject query = new BasicDBObject( "groupId", new BasicDBObject( "$in", arrayGroupId ) )
-				.append( "thingTypeId", new BasicDBObject( "$in", arrayThingTypeId ) )
-				.append( "fieldName",   new BasicDBObject( "$in", arrayFieldnames ) )
-				.append( "prevEnd",     new BasicDBObject( "$lt", reportDate ) )
-				.append( "nextStart",   new BasicDBObject( "$gt", reportDate ) );
+		//BasicDBObject query = new BasicDBObject( "groupId", new BasicDBObject( "$in", arrayGroupId ) )
+		//		.append( "thingTypeId", new BasicDBObject( "$in", arrayThingTypeId ) )
+		//		.append( "fieldName",   new BasicDBObject( "$in", arrayFieldnames ) )
+		//		.append( "prevEnd",     new BasicDBObject( "$lt", reportDate ) )
+		//		.append( "nextStart",   new BasicDBObject( "$gt", reportDate ) );
 
-		DBCursor cursor = timeseriesCollection.find(query);
+		BasicDBObject query = new BasicDBObject()
+				.append( "prevEnd", new BasicDBObject( "$lt", dateReport ) )
+				.append( "nextStart",   new BasicDBObject( "$gt", dateReport ) );
+
+		DBCursor cursor = timeseriesCollection.find(query).sort( new BasicDBObject( "_id.id", 1 ) );
 		BulkWriteOperation bulkWriteOperation = outputCollection.initializeUnorderedBulkOperation();
 
 
@@ -145,7 +144,7 @@ public class timeseries  implements controllerInterface
 
 			//var str = [];
 			String value = null;
-			Long   timeLastChange  = null;
+			Date   timeLastChange  = null;
 			Integer i;
 			BasicDBList timeList  = (BasicDBList) timeserie.get("time");
 			BasicDBList valueList = (BasicDBList) timeserie.get("value");
@@ -156,9 +155,9 @@ public class timeseries  implements controllerInterface
 				if ( timeList.get(i) != null && ! timeList.get(i).equals( 0 ) ) {
 					if (value == null ) {
 						value = valueList.get(i).toString();
-						timeLastChange  = Long.parseLong( timeList.get(i).toString());
+						timeLastChange  = (Date) timeList.get( i );
 					}
-					if (timeLastChange > reportDate ) {
+					if (timeLastChange.getTime() > dateReport.getTime() ) {
 						i = -1;  //exit from this loop
 					}
 				}
@@ -175,21 +174,22 @@ public class timeseries  implements controllerInterface
 						bulkWriteOperation.execute();
 						bulkWriteOperation = outputCollection.initializeUnorderedBulkOperation();
 						bulkOperations = 0;
-						System.out.println( totalDocs + " docs"  );
+						if (totalDocs % 10000L == 0)
+						{
+							System.out.println( totalDocs + " docs" );
+						}
 					}
 				}
 				BasicDBObject mongoId = (BasicDBObject)timeserie.get("_id");
 				newDoc = new BasicDBObject()
-						.append( "id",               mongoId.get( "id" ) )
-						.append( "thingTypeFieldId", mongoId.get( "thingTypeFieldId" ) )
+						.append( "_id", mongoId.get( "id" ) )
 						.append( "thingTypeId",      timeserie.get( "thingTypeId" ) )
 						.append( "serialNumber",     timeserie.get( "serialNumber" ) );
 			}
 			//add the fieldName with his value and with his date
-			newDoc.append( timeserie.get("fieldName").toString(), value );
+			newDoc.append( timeserie.get( "fieldName" ).toString(), value );
 
-			newDoc.append( timeserie.get("fieldName").toString() + "Date", timeLastChange );
-			newDoc.append( timeserie.get("fieldName").toString() + "Date2", new Date(timeLastChange) );
+			newDoc.append( timeserie.get( "fieldName" ).toString() + "Date", timeLastChange );
 
 			prevSerialNumber = timeserie.get("serialNumber").toString();
 
@@ -210,37 +210,43 @@ public class timeseries  implements controllerInterface
 
 	private void timeserieReport()
 	{
-		Scanner in;
-		in = new Scanner(System.in);
-		Long reportDate = new Date().getTime();
-		String groupId;
-		String thingTypeId;
-		String fieldName;
-		String prevEnd;
-		String nextStart;
+		Integer year, month, day, hour, minute, second;
+		do
+		{
+			year = Integer.valueOf( cu.prompt( "enter a Year ", "" + strYear ) );
+		} while (year < 2015 || year > 2015);
 
-		executeTimeserieReport();
-		/*
-		System.out.print(cu.ANSI_BLACK + "\nHow many things wants to change?[" + cu.ANSI_GREEN + "1000" + cu.ANSI_BLACK + "]:");
-		String tagIn = in.nextLine();
-		if (tagIn.equals("")) {
-			tagIn = "1000";
-		} else {
-			tagIn = "" + Long.parseLong(tagIn);
-		}
-		thingsToChange = Long.parseLong(tagIn);
+		do
+		{
+			month = Integer.valueOf( cu.prompt( "enter a Month ", "" + strMonth ) );
+		} while (month < 0 || month > 12);
 
-		System.out.print(cu.ANSI_BLACK + "\nHow many miliseconds (ms) between each blink ?[" + cu.ANSI_GREEN + delayBetweenThings + cu.ANSI_BLACK + "]:");
-		tagIn = in.nextLine();
-		if (tagIn.equals("")) {
-			//delayBetweenThings = delayBetweenThings;
-		} else {
-			delayBetweenThings = Integer.parseInt( tagIn );
-		}
+		do
+		{
+			day = Integer.valueOf( cu.prompt( "enter a Day ", "" + strDay ) );
+		} while (day < 1 || day > 31);
 
-		System.out.print(cu.ANSI_BLACK + "\nChanging " + thingsToChange + " things with a delay of " + delayBetweenThings + " ms.");
+		do
+		{
+			hour = Integer.valueOf( cu.prompt( "enter a Hour ", "" + strHour ) );
+		} while (hour < 0 || hour > 24);
 
-		*/
+		do
+		{
+			minute = Integer.valueOf( cu.prompt( "enter a Minute ", "" + strMinute ) );
+		} while (minute < 0 || minute > 60);
+
+		do
+		{
+			second = Integer.valueOf( cu.prompt( "enter a Second ", "" + strSecond ) );
+		} while (second < 0 || second > 60);
+
+		Calendar c = Calendar.getInstance();
+		c.set(year, month -1, day, hour, minute, second);
+		Date dateReport = c.getTime();
+
+		outputReport = cu.prompt( "enter Output Report Collection ", "" + outputReport );
+		executeTimeserieReport(outputReport, dateReport);
 	}
 
 	public void bsonExamples()
@@ -321,13 +327,328 @@ public class timeseries  implements controllerInterface
 
 	}
 
+	private Boolean getSegmentAndPointer( HashMap<String, Object> history )
+	{
+		HashMap<String, Object> res = new HashMap<>();
+
+		//init the segment and pointer to null values before the process
+		history.put("segment", null);
+		history.put("pointer", 0L);
+
+		//get the thing from the temporal hashmap
+		DBObject thing = (DBObject)history.get("thing");
+		DBCollection control = (DBCollection)history.get("timeseriesControlCollection");
+
+		//the primary key has two values
+		BasicDBObject key = new BasicDBObject( "id", history.get("thingId") )
+				.append( "thingTypeFieldId",    history.get("thingTypeFieldId") );
+
+		//first call to Database
+		//probably we can improve it, and dont query the DB, if this data is part of thing cache
+		BasicDBObject query = new BasicDBObject( "_id", key );
+
+		try
+		{
+			DBObject doc = control.findOne( query );
+			if ( doc != null )
+			{
+				//save the segment, for later use, when change the nextStart for a previous timeseries doc
+				if (doc.containsField( "segment" ) && doc.get( "segment" ) != null )
+				{
+					history.put( "segment", doc.get( "segment" ) );
+				}
+				if (doc.containsField( "lastDate" ) && doc.get( "lastDate" ) != null )
+				{
+					history.put( "lastDate", doc.get( "lastDate" ) );
+				}
+
+				//since we have access to the lastValue and lastDate in the database,
+				//here we are checking if the timestamp is different to save the timeseries
+				if (doc.containsField( "lastValue" ) && doc.containsField( "lastDate" ))
+				{
+					//if ( (doc.get("lastDate").toString().equals( history.get("timestamp").toString() )) {
+					if ( (doc.get("lastDate") == history.get("timestamp") )) {
+						//return before, because the field does not change
+						return false;
+					}
+				}
+
+				//update the control collection, if the segment is full create a new one
+				decrementSegment( history );
+			}
+			else
+			{
+				//if the segment doesn't exists, we need to create it
+				// in history map, we already have the segment and the pointer
+				// the second parameters, means we dont have a previous date because is first time
+				createSegment( history, null);
+			}
+		}
+		catch( Exception e )
+		{
+			System.out.println( e );
+		}
+		return true;
+	}
+
+	private void createSegment( HashMap<String, Object> history, Date prevEnd )
+	{
+		//two calls to Database to create a new timeseries document, and the timeseriesControl
+		//if this is the first time for a udf, the timeseriesControl is created, in other case is updated
+		DBObject thing             = (DBObject)history.get("thing");
+		DBCollection control    = (DBCollection)history.get("timeseriesControlCollection");
+		DBCollection timeseries = (DBCollection)history.get("timeseriesCollection");
+		//Long thingTypeFieldId   = (Long)history.get("thingTypeFieldId");
+		String thingTypeFieldId   = (String)history.get("thingTypeFieldId");
+		String fieldName        = (String)history.get("fieldName");
+		String value            = (String)history.get("value");
+		Date timestamp          = (Date)history.get("timestamp");
+		Long segment            = new Date().getTime();
+
+		//the primary key has two values
+		BasicDBObject key = new BasicDBObject( "id", history.get( "thingId" ) ).append( "thingTypeFieldId",    thingTypeFieldId );
+
+		//if prevEnd is null, create the 'record' for this udf
+		if (prevEnd == null)
+		{
+			//create the control collection, only if the collection does not exist previously
+			DBObject doc = new BasicDBObject( "_id", key )
+					//.append( "thingTypeId", thing.getThingType().id )
+					//.append( "groupId", thing.getGroupId() )
+					//.append( "name", thing.getName() )
+					.append( "serialNumber", history.get("serialNumber") )
+					.append( "fieldName", fieldName )
+
+					.append( "lastDate", timestamp )
+					.append( "lastValue", value )
+					.append( "segment", segment )
+					.append( "pointer", this.TIMESERIES_PER_SEGMENT );
+
+			control.insert( doc );
+		} else {
+			//update the segment with the new one, and pointer to the max timeseries per segment
+			DBObject query = new BasicDBObject( "_id", key );
+			DBObject updateDoc = new BasicDBObject( "segment", segment )
+					.append( "pointer", this.TIMESERIES_PER_SEGMENT );
+			DBObject setDoc = new BasicDBObject( "$set", updateDoc );
+			control.setWriteConcern( WriteConcern.UNACKNOWLEDGED  );
+
+			DBObject doc = control.findAndModify( query, null, null, false, setDoc, true, false );
+		}
+
+		//fill two arrays with empty values
+		ArrayList<Long> arrayTime  = new ArrayList<>( this.TIMESERIES_PER_SEGMENT );
+		ArrayList<String> arrayValue = new ArrayList<>( this.TIMESERIES_PER_SEGMENT );
+		for (int i = 0; i <= this.TIMESERIES_PER_SEGMENT; i++) {
+			arrayTime.add(i, 0L);
+			arrayValue.add(i, "");
+		}
+
+		//if prevEnd is null, is because this is the first time for this udf for this thing id
+		if (prevEnd == null)
+		{
+			prevEnd = timestamp;
+		}
+		BasicDBObject keyTimeseries = new BasicDBObject( "id", history.get( "thingId" ) )
+				.append( "thingTypeFieldId",    history.get("thingTypeFieldId") )
+				.append( "segment", segment );
+
+		DBObject timedoc = new BasicDBObject( "_id", keyTimeseries)
+				//.append( "thingTypeId",  thing.getThingType().id )
+				//.append( "groupId",      thing.getGroupId() )
+				//.append( "name",         thing.getName() )
+				.append( "serialNumber", history.get( "serialNumber" ) )
+				.append( "fieldName", fieldName )
+
+				.append( "prevEnd", prevEnd )
+				//.append( "nextStart", Long.MAX_VALUE )
+				.append( "nextStart", new Date(Long.MAX_VALUE) )
+				.append( "time", arrayTime )
+				.append( "value", arrayValue );
+
+		timeseries.insert( timedoc );
+
+		//update the nextStart when we are creating a new timeseries document
+		if (prevEnd != null && history.get("segment") != null ) {
+			if ( !history.get("segment").toString().equals( segment.toString() ))
+			{
+				BasicDBObject keyOldTimeseries = new BasicDBObject( "id", history.get( "thingId" ) )
+						.append( "thingTypeFieldId", history.get( "thingTypeFieldId" ) )
+						.append( "segment", history.get( "segment" ) );
+				DBObject query = new BasicDBObject( "_id", keyOldTimeseries );
+				DBObject updateDoc = new BasicDBObject( "nextStart", timestamp );
+				DBObject setDoc = new BasicDBObject( "$set", updateDoc );
+				timeseries.findAndModify( query, null, null, false, setDoc, true, false );
+			}
+		}
+
+		history.put ("segment", segment);
+		history.put ("pointer", this.TIMESERIES_PER_SEGMENT);
+
+	}
+
+
+	private void decrementSegment( HashMap<String, Object> history )
+	{
+		DBObject thing             = (DBObject)history.get("thing");
+		DBCollection control    = (DBCollection)history.get("timeseriesControlCollection");
+		DBCollection timeseries = (DBCollection)history.get("timeseriesCollection");
+		String thingTypeFieldId   = (String)history.get("thingTypeFieldId");
+		//Long thingTypeFieldId   = (Long)history.get("thingTypeFieldId");
+		String fieldName        = (String)history.get("fieldName");
+		String value            = (String)history.get("value");
+		Date timestamp          = (Date)history.get("timestamp");
+		Long segment            = new Date().getTime();
+
+		//the primary key has two values
+		BasicDBObject key = new BasicDBObject( "id", history.get("thingId") )
+				.append( "thingTypeFieldId",    thingTypeFieldId );
+
+		DBObject query = new BasicDBObject( "_id", key );
+
+		DBObject setDoc = new BasicDBObject( "lastDate", timestamp )
+				.append( "lastValue", value );
+
+		DBObject incDoc = new BasicDBObject( "pointer", -1 );
+
+		DBObject updateDoc = new BasicDBObject( "$set", setDoc )
+				.append( "$inc", incDoc );
+
+		DBObject doc = control.findAndModify( query, null, null, false, updateDoc, true, false );
+		Integer pointer = Integer.parseInt( doc.get("pointer").toString() );
+		if (pointer < 0 ) {
+			if (history.containsKey( "lastDate" ) && history.get("lastDate") != null)
+			{
+				createSegment( history, (Date)history.get( "lastDate" ) );
+			}
+			else
+			{
+				createSegment( history, new Date() );
+			}
+		}
+		else
+		{
+			history.put( "segment", doc.get( "segment" ) );
+			history.put( "pointer", doc.get( "pointer" ) );
+		}
+	}
+
+	private void updateTimeseriesSegment( HashMap<String, Object> history )
+	{
+
+		//here we asuming the "segment" and the "pointer" have been calculated previously
+		//and this method is updating the timeseries document in Database
+		DBObject thing             = (DBObject)history.get("thing");
+		DBCollection timeseries = (DBCollection)history.get("timeseriesCollection");
+		String value            = (String)history.get("value");
+		Date   timestamp        = (Date)history.get("timestamp");
+		Long segment            = (Long)history.get("segment");
+		Integer pointer         = (Integer)history.get("pointer");
+
+		try {
+			BasicDBObject key = new BasicDBObject( "id", history.get("thingId") )
+					.append( "thingTypeFieldId",    history.get("thingTypeFieldId") )
+					.append( "segment",    segment );
+
+			BasicDBObject query = new BasicDBObject( "_id", key);
+
+			DBObject updateDoc = new BasicDBObject( "time." + pointer, timestamp )
+					.append( "value." + pointer, value );
+
+			timeseries.setWriteConcern( WriteConcern.UNACKNOWLEDGED  );
+			timeseries.update( query, new BasicDBObject( "$set", updateDoc ));
+		}
+		finally
+		{
+		}
+	}
+
+	public void insertThingHistory( DBObject thing)
+	{
+		//hash map to store fields needed to update both Collections, timeseries and timeseriesControl
+		HashMap<String, Object> history = new HashMap<>();
+		try {
+			DBCollection timeseriesCollection        = cu.db.getCollection( "timeseries" );
+			DBCollection timeseriesControlCollection = cu.db.getCollection( "timeseriesControl" );
+
+			history.put("timeseriesCollection",        timeseriesCollection);
+			history.put("timeseriesControlCollection", timeseriesControlCollection);
+			history.put("thing", thing);
+
+			DBObject mongoId = (DBObject)thing.get("_id");
+			String fieldName = mongoId.get("thingTypeFieldId").toString();
+			history.put("fieldName", fieldName );
+
+			DBObject mrValue = (DBObject)thing.get("value");
+			DBObject field   = (DBObject)mrValue.get(fieldName);
+
+			history.put("thingId", mongoId.get("id") );
+			history.put("serialNumber", mrValue.get("serialNumber") );
+
+			//temporaly use the fieldname instead the thingTypeFieldId
+			//history.put("thingTypeFieldId", field.get("thingTypeFieldId") );
+			history.put("thingTypeFieldId", fieldName );
+
+			String value     = field.get("value").toString();
+			Date   timestamp = (Date)field.get("time");
+
+			history.put("value", value);
+			history.put("timestamp", timestamp);
+
+			//update the TimeseriesControl collection to get the current segment and pointer
+			//but first check if the udf has changed, if not continue
+			if ( getSegmentAndPointer( history ) )
+			{
+				//update the segment with the last value
+				updateTimeseriesSegment( history );
+			}
+		}
+		catch( MongoException me )
+		{
+			System.out.println( me );
+		}
+		//System.out.println( "[Insert timeseries in timeseries by segment] " + history.get( "serialNumber" ) + "[" + history.get("thingId") + "]" );
+	}
+
+
+
+	public void importTimeseries()
+	{
+
+		String collectionName = cu.prompt( "enter the source DBcollection ", "demo4" );
+
+		DBCollection timeseries        = cu.db.getCollection("timeseries");
+		DBCollection timeseriescontrol = cu.db.getCollection("timeseriesControl");
+		timeseries.drop();
+		timeseriescontrol.drop();
+
+		DBCollection tempCollection = cu.db.getCollection(collectionName);
+
+		DBCursor cursor = tempCollection.find();
+
+		Long times = 0L;
+		while (cursor.hasNext()) {
+			DBObject tdoc = cursor.next();
+			insertThingHistory( tdoc);
+			times++;
+			if ( times % 1000 == 0 )
+			{
+				System.out.println( "[Inserted " + times + " timeseries ] " + ((DBObject) tdoc.get( "_id" )).get( "id" ) );
+			}
+
+		}
+
+
+
+	}
+
 	public void execute() {
 		setup();
 		HashMap<String, String> options = new HashMap<String,String>();
 
 		options.put("1", "simple timeserie report");
 		options.put("2", "bson examples");
-		options.put("4", "bson examples");
+		options.put("3", "import timeseries from thingSnapshot temporal");
 
 		Integer option = 0;
 		while (option != null) {
@@ -338,6 +659,9 @@ public class timeseries  implements controllerInterface
 				}
 				if (option == 1) {
 					bsonExamples();
+				}
+				if (option == 2) {
+					importTimeseries();
 				}
 
 				System.out.println(cu.ANSI_BLACK +  "\npress [enter] to continue");
