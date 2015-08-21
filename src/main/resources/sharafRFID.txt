@@ -48,6 +48,7 @@
     { "id":11,     "type":2,   "name":"location",        "symbol":"",      "timeSeries":false,      "unit":""    },
     { "id":11,     "type":4,   "name":"price",           "symbol":"",      "timeSeries":true,       "unit":""    },
     { "id":11,     "type":4,   "name":"touches",         "symbol":"",      "timeSeries":true,       "unit":""    },
-    { "id":11,     "type":4,   "name":"likes",           "symbol":"",      "timeSeries":true,       "unit":""    }
+    { "id":11,     "type":4,   "name":"likes",           "symbol":"",      "timeSeries":true,       "unit":""    },
+    { "id":11,     "type":1,   "name":"shift",           "symbol":"",      "timeSeries":true,       "unit":""    }
   ]
 }

@@ -54,6 +54,10 @@ public class mapreduce implements controllerInterface
 	DBCollection outputCollection;
 	BasicDBObject docs[];		String tag;
 
+	String thingTypeCode = "default_rfid_thingtype";
+	String thingField    = "status";
+	String thingFieldJSON = "shifts";
+
 	MqttUtils mq;
 
 	public void setCu(CommonUtils cu) {
@@ -504,7 +508,6 @@ public class mapreduce implements controllerInterface
 			Integer i;
 			Long baseSerial;
 
-
 			baseSerial = serialNumber +1;
 			//the parent thing : forklift
 			topic = "/v1/data/ALEB/forklift";
@@ -650,7 +653,6 @@ public class mapreduce implements controllerInterface
 		{
 			cu.sleep( delayBetweenThings );
 		}
-
 	}
 
 	private void changeThings( Boolean allThings )
@@ -772,6 +774,131 @@ public class mapreduce implements controllerInterface
 
 	}
 
+	private void sendCommasBlink() {
+		StringBuffer sb = new StringBuffer();
+
+		Random r = new Random();
+		String serialNumber = "";
+
+		serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber",lastSerialNumber );
+		lastSerialNumber = serialNumber.substring(serialNumber.length()-21, serialNumber.length());
+		serialNumber = lastSerialNumber;
+
+		thingTypeCode = cu.prompt( "enter the thingTypeCode",thingTypeCode );
+
+		thingField = cu.prompt( "enter the udf name",thingField );
+
+		String fruits[] = {"apples", "oranges", "bananas", "grapes", "strawberries", "watermelon", "pineapples"};
+		String commaValue = "";
+		for (int i = 0; i < r.nextInt( 2 )+2; i++) {
+			commaValue += (commaValue.equals( "" ) ? "" : ", " ) + (r.nextInt( 10 ) + 1) + " " + fruits[ r.nextInt( fruits.length -1)];
+		}
+
+		String topic = "/v1/data/ALEB/" + thingTypeCode;
+
+		Long time = new Date().getTime();
+		sb.append( " sn," + sequenceNumber + "\n" );
+		sb.append(",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n");
+
+		sb.append(serialNumber + "," + time + "," + thingField + "," + "\"" + commaValue + "\"\n");
+
+
+		System.out.println(" serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "");
+		System.out.println("thingTypeCode: " + cu.ANSI_BLUE + thingTypeCode + cu.ANSI_BLACK + "");
+		System.out.println("        field: " + cu.ANSI_BLUE + thingField + cu.ANSI_BLACK + "");
+		System.out.println("        value: " + cu.ANSI_BLUE + commaValue + cu.ANSI_BLACK + "");
+
+		DBObject prevThing = cu.getThing( serialNumber );
+
+		mq.publishSyncMessage(topic, sb.toString());
+		cu.sleep( 1000 );
+
+		DBObject newThing = cu.getThing( serialNumber );
+		cu.diffThings( newThing, prevThing );
+	}
+
+	private void sendJSONBlink() {
+		StringBuffer sb = new StringBuffer();
+
+		Random r = new Random();
+		String serialNumber = "";
+
+		serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber",lastSerialNumber );
+		lastSerialNumber = serialNumber.substring(serialNumber.length()-21, serialNumber.length());
+		serialNumber = lastSerialNumber;
+
+		thingTypeCode = cu.prompt( "enter the thingTypeCode",thingTypeCode );
+
+		thingFieldJSON = cu.prompt( "enter the udf name",thingFieldJSON );
+
+		String fruits[] = {"apples", "oranges", "bananas", "grapes", "strawberries", "watermelon", "pineapples"};
+		String commaValue = "";
+		for (int i = 0; i < r.nextInt( 2 )+2; i++) {
+			commaValue += (commaValue.equals( "" ) ? "" : ", " ) + (r.nextInt( 10 ) + 1) + " " + fruits[ r.nextInt( fruits.length -1)];
+		}
+
+		String topic = "/v1/data/ALEB/" + thingTypeCode;
+
+		StringBuffer sbjs = new StringBuffer(  );
+
+		String ISOTime = "2015-08-21T12:22:22Z";
+
+		sbjs.append( "[" );
+		sbjs.append( "{" );
+		sbjs.append( "\"id\":29," );
+		sbjs.append( "\"name\":\"SHIFT 1\"," );
+		sbjs.append( "\"active\":true," );
+		sbjs.append( "\"daysofweek\":\"23456\"," );
+		sbjs.append( "\"time\":\"" + ISOTime + "\"," );
+		sbjs.append( "\"fruits\":\"" + commaValue + "\"" );
+		sbjs.append( "}" );
+		sbjs.append( "{" );
+		sbjs.append( "\"id\":29," );
+		sbjs.append( "\"name\":\"SHIFT 2\"," );
+		sbjs.append( "\"active\":false," );
+		sbjs.append( "\"daysofweek\":\"17\"," );
+		sbjs.append( "\"time\":\"" + ISOTime + "\"" );
+		sbjs.append( "}" );
+		sbjs.append( "]" );
+
+		StringBuilder jsonStr = new StringBuilder(  );
+		for (int i = 0; i < sbjs.toString().length(); i++ )
+		{
+			char car = sbjs.toString().charAt( i );
+			if ('"' == car)
+			{
+				jsonStr.append( '\\' );
+				jsonStr.append( '"' );
+			} else {
+				jsonStr.append( car );
+			}
+		}
+
+		sb.append( " sn," + sequenceNumber + "\n" );
+
+		Long time = new Date().getTime();
+		sb.append( " sn," + sequenceNumber + "\n" );
+		sb.append(",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n");
+
+		sb.append(serialNumber + "," + time + "," + thingFieldJSON + "," + "\"" + jsonStr.toString() + "\"\n");
+
+
+		System.out.println(" serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "");
+		System.out.println("thingTypeCode: " + cu.ANSI_BLUE + thingTypeCode + cu.ANSI_BLACK + "");
+		System.out.println("        field: " + cu.ANSI_BLUE + thingFieldJSON + cu.ANSI_BLACK + "");
+		System.out.println("        value: " + cu.ANSI_BLUE + jsonStr.toString() + cu.ANSI_BLACK + "");
+
+		DBObject prevThing = cu.getThing( serialNumber );
+
+		mq.publishSyncMessage(topic, sb.toString());
+		cu.sleep( 1000 );
+
+		DBObject newThing = cu.getThing( serialNumber );
+		cu.diffThings( newThing, prevThing );
+	}
+
+
+
 	public void incrementalMR()
 	{
 		DBCursor cursor;
@@ -848,6 +975,8 @@ public class mapreduce implements controllerInterface
 		options.put("5", "change 1000 child things only");
 		options.put("6", "change 1 things");
 		options.put("7", "execute incremental MR");
+		options.put("8", "send a CSV (comma separate values) to udf");
+		options.put("9", "send a JSON to udf");
 		//options.put("4", "delete things and thingtypes");
 
 		Integer option = 0;
@@ -874,6 +1003,13 @@ public class mapreduce implements controllerInterface
 				}
 				if (option == 6) {
 					incrementalMR();
+				}
+				if (option == 7) {
+					sendCommasBlink();
+				}
+
+				if (option == 8) {
+					sendJSONBlink();
 				}
 
 				System.out.println(cu.ANSI_BLACK +  "\npress [enter] to continue");

@@ -54,11 +54,12 @@ public class timeseries  implements controllerInterface
 	String fieldName   = "zone, brand, location, locationXYZ";
 	String strYear   = "2015";
 	String strMonth  = "8"; //zero based
-	String strDay    = "1";
-	String strHour   = "2";
+	String strDay    = "19";
+	String strHour   = "12";
 	String strMinute = "0";
 	String strSecond = "0";
 	String outputReport = "report";
+	String outputReportSparse = "reportSparse";
 	String lastSerialNumber = "000000000000000010001";
 
 	List<Long> arrayGroupId = new ArrayList<Long>();
@@ -99,7 +100,7 @@ public class timeseries  implements controllerInterface
 		return sb.toString();
 	}
 
-	private void executeTimeserieReport(String outputReport, Date dateReport)
+	private void executeDenseTimeserieReport(String outputReport, Date dateReport)
 	{
 		outputCollection = cu.db.getCollection(outputReport);
 		outputCollection.drop();
@@ -127,10 +128,13 @@ public class timeseries  implements controllerInterface
 		//		.append( "nextStart",   new BasicDBObject( "$gt", reportDate ) );
 
 		BasicDBObject query = new BasicDBObject()
-				.append( "prevEnd", new BasicDBObject( "$lt", dateReport ) )
+				.append( "prevEnd",     new BasicDBObject( "$lt", dateReport ) )
 				.append( "nextStart",   new BasicDBObject( "$gt", dateReport ) );
 
-		DBCursor cursor = timeseriesCollection.find(query).sort( new BasicDBObject( "_id.id", 1 ) );
+		DBCursor cursor = timeseriesCollection.find(query);
+		tu.mark();
+		System.out.println("QUERY: { prevEnd: {$lt: " + dateReport + "}, nextStart: {$gt: " + dateReport + "} }");
+
 		BulkWriteOperation bulkWriteOperation = outputCollection.initializeUnorderedBulkOperation();
 
 
@@ -143,7 +147,7 @@ public class timeseries  implements controllerInterface
 			numDocs ++;
 
 			//var str = [];
-			String value = null;
+			DBObject value = null;
 			Date   timeLastChange  = null;
 			Integer i;
 			BasicDBList timeList  = (BasicDBList) timeserie.get("time");
@@ -154,7 +158,7 @@ public class timeseries  implements controllerInterface
 			while ( i >= 0) {
 				if ( timeList.get(i) != null && ! timeList.get(i).equals( 0 ) ) {
 					if (value == null ) {
-						value = valueList.get(i).toString();
+						value = (DBObject)valueList.get(i);
 						timeLastChange  = (Date) timeList.get( i );
 					}
 					if (timeLastChange.getTime() > dateReport.getTime() ) {
@@ -164,6 +168,26 @@ public class timeseries  implements controllerInterface
 				i--;
 			}
 
+			BasicDBObject mongoId = (BasicDBObject)timeserie.get("_id");
+			newDoc = new BasicDBObject()
+					.append( "_id", mongoId.get("id") )
+					.append( "serialNumber",     timeserie.get( "serialNumber" ) )
+					.append( "fields",    	   value );
+
+			bulkWriteOperation.insert( newDoc );
+			bulkOperations ++;
+			totalDocs ++;
+			if (bulkOperations >= 1000) {
+				bulkWriteOperation.execute();
+				bulkWriteOperation = outputCollection.initializeUnorderedBulkOperation();
+				bulkOperations = 0;
+				if (totalDocs % 10000L == 0)
+				{
+					System.out.println( totalDocs + " docs" );
+				}
+			}
+
+			/*
 			// build the document to be stored in the output collection
 			if (!prevSerialNumber.equals( timeserie.get("serialNumber")) ) {
 				if (newDoc != null) {
@@ -183,17 +207,19 @@ public class timeseries  implements controllerInterface
 				BasicDBObject mongoId = (BasicDBObject)timeserie.get("_id");
 				newDoc = new BasicDBObject()
 						.append( "_id", mongoId.get( "id" ) )
-						.append( "thingTypeId",      timeserie.get( "thingTypeId" ) )
 						.append( "serialNumber",     timeserie.get( "serialNumber" ) );
 			}
 			//add the fieldName with his value and with his date
-			newDoc.append( timeserie.get( "fieldName" ).toString(), value );
 
-			newDoc.append( timeserie.get( "fieldName" ).toString() + "Date", timeLastChange );
+			//newDoc.append( timeserie.get( "fieldName" ).toString(), value );
+			//newDoc.append( timeserie.get( "fieldName" ).toString() + "Date", timeLastChange );
+
+			newDoc.append( "fields", value );
 
 			prevSerialNumber = timeserie.get("serialNumber").toString();
-
+			*/
 		}
+		/*
 		if (newDoc != null) {
 			bulkWriteOperation.insert( newDoc );
 			bulkOperations ++;
@@ -202,13 +228,150 @@ public class timeseries  implements controllerInterface
 		if (bulkOperations > 0) {
 			bulkWriteOperation.execute();
 		}
+		*/
 		tu.mark();
 		System.out.println( totalDocs + " docs"  );
 		System.out.println("timeseries report generated in " + tu.getLastDelt() + " ms ");
 
 	}
 
-	private void timeserieReport()
+	private void executeSparseTimeserieReport(String outputReport, Date dateReport)
+	{
+		outputCollection = cu.db.getCollection(outputReport);
+		DBCollection sparseCollection = cu.db.getCollection("sparse");
+
+		outputCollection.drop();
+
+		arrayGroupId.add( 3L );
+		arrayThingTypeId.add( 6L );
+		arrayThingTypeId.add( 8L );
+		arrayThingTypeId.add( 7L );
+		arrayFieldnames.add("zone");
+		arrayFieldnames.add("location");
+		arrayFieldnames.add("locationXYZ");
+		arrayFieldnames.add("brand");
+
+		TimerUtils tu = new TimerUtils();
+		Integer bulkOperations = 0;
+		Long totalDocs = 0L;
+		tu.mark();
+
+		System.out.println("Generate Report for " + dateReport );
+
+		//BasicDBObject query = new BasicDBObject( "groupId", new BasicDBObject( "$in", arrayGroupId ) )
+		//		.append( "thingTypeId", new BasicDBObject( "$in", arrayThingTypeId ) )
+		//		.append( "fieldName",   new BasicDBObject( "$in", arrayFieldnames ) )
+		//		.append( "prevEnd",     new BasicDBObject( "$lt", reportDate ) )
+		//		.append( "nextStart",   new BasicDBObject( "$gt", reportDate ) );
+
+		BasicDBObject query = new BasicDBObject()
+				.append( "prevEnd",     new BasicDBObject( "$lt", dateReport ) )
+				.append( "nextStart",   new BasicDBObject( "$gt", dateReport ) );
+
+		DBCursor cursor = sparseCollection.find(query);
+		tu.mark();
+		System.out.println("QUERY: { prevEnd: {$lt: " + dateReport + "}, nextStart: {$gt: " + dateReport + "} }");
+
+		BulkWriteOperation bulkWriteOperation = outputCollection.initializeUnorderedBulkOperation();
+
+		String prevSerialNumber = "";
+		BasicDBObject newDoc = null;
+
+		Long numDocs = 0L;
+		while (cursor.hasNext()) {
+			DBObject timeserie = cursor.next();
+			numDocs ++;
+
+			//var str = [];
+			DBObject value = null;
+			Date   timeLastChange  = null;
+			Integer i;
+			BasicDBList timeList  = (BasicDBList) timeserie.get("time");
+			BasicDBList valueList = (BasicDBList) timeserie.get("values");
+
+			//go over the internal array to get the latest value for the date specified
+			i = timeList.size()-1;
+			while ( i >= 0) {
+				if ( timeList.get(i) != null && ! timeList.get(i).equals( 0 ) ) {
+					if (value == null ) {
+						value = (DBObject)valueList.get(i);
+						timeLastChange  = (Date) timeList.get( i );
+					}
+					if (timeLastChange.getTime() > dateReport.getTime() ) {
+						i = -1;  //exit from this loop
+					}
+				}
+				i--;
+			}
+
+			BasicDBObject mongoId = (BasicDBObject)timeserie.get("_id");
+			newDoc = new BasicDBObject()
+					.append( "_id", mongoId.get("id") )
+					.append( "serialNumber",     timeserie.get( "serialNumber" ) )
+					.append( "fields",    	   value );
+
+			bulkWriteOperation.insert( newDoc );
+			bulkOperations ++;
+			totalDocs ++;
+			if (bulkOperations >= 2000) {
+				bulkWriteOperation.execute();
+				bulkWriteOperation = outputCollection.initializeUnorderedBulkOperation();
+				bulkOperations = 0;
+				if (totalDocs % 10000L == 0)
+				{
+					System.out.println( totalDocs + " docs" );
+				}
+			}
+
+			/*
+			// build the document to be stored in the output collection
+			if (!prevSerialNumber.equals( timeserie.get("serialNumber")) ) {
+				if (newDoc != null) {
+					bulkWriteOperation.insert( newDoc );
+					bulkOperations ++;
+					totalDocs ++;
+					if (bulkOperations >= 1000) {
+						bulkWriteOperation.execute();
+						bulkWriteOperation = outputCollection.initializeUnorderedBulkOperation();
+						bulkOperations = 0;
+						if (totalDocs % 10000L == 0)
+						{
+							System.out.println( totalDocs + " docs" );
+						}
+					}
+				}
+				BasicDBObject mongoId = (BasicDBObject)timeserie.get("_id");
+				newDoc = new BasicDBObject()
+						.append( "_id", mongoId.get( "id" ) )
+						.append( "serialNumber",     timeserie.get( "serialNumber" ) );
+			}
+			//add the fieldName with his value and with his date
+
+			//newDoc.append( timeserie.get( "fieldName" ).toString(), value );
+			//newDoc.append( timeserie.get( "fieldName" ).toString() + "Date", timeLastChange );
+
+			newDoc.append( "fields", value );
+
+			prevSerialNumber = timeserie.get("serialNumber").toString();
+			*/
+		}
+		/*
+		if (newDoc != null) {
+			bulkWriteOperation.insert( newDoc );
+			bulkOperations ++;
+			totalDocs ++;
+		}
+		if (bulkOperations > 0) {
+			bulkWriteOperation.execute();
+		}
+		*/
+		tu.mark();
+		System.out.println( totalDocs + " docs"  );
+		System.out.println("timeseries report generated in " + tu.getLastDelt() + " ms ");
+
+	}
+
+	private void denseTimeserieReport()
 	{
 		Integer year, month, day, hour, minute, second;
 		do
@@ -236,17 +399,60 @@ public class timeseries  implements controllerInterface
 			minute = Integer.valueOf( cu.prompt( "enter a Minute ", "" + strMinute ) );
 		} while (minute < 0 || minute > 60);
 
-		do
-		{
-			second = Integer.valueOf( cu.prompt( "enter a Second ", "" + strSecond ) );
-		} while (second < 0 || second > 60);
+		//do
+		//{
+		//	second = Integer.valueOf( cu.prompt( "enter a Second ", "" + strSecond ) );
+		//} while (second < 0 || second > 60);
+		second = Integer.valueOf( strSecond ) ;
 
 		Calendar c = Calendar.getInstance();
 		c.set(year, month -1, day, hour, minute, second);
 		Date dateReport = c.getTime();
 
 		outputReport = cu.prompt( "enter Output Report Collection ", "" + outputReport );
-		executeTimeserieReport(outputReport, dateReport);
+		executeDenseTimeserieReport( outputReport, dateReport );
+	}
+
+	private void sparseTimeserieReport()
+	{
+		Integer year, month, day, hour, minute, second;
+		do
+		{
+			year = Integer.valueOf( cu.prompt( "enter a Year ", "" + strYear ) );
+		} while (year < 2015 || year > 2015);
+
+		do
+		{
+			month = Integer.valueOf( cu.prompt( "enter a Month ", "" + strMonth ) );
+		} while (month < 0 || month > 12);
+
+		do
+		{
+			day = Integer.valueOf( cu.prompt( "enter a Day ", "" + strDay ) );
+		} while (day < 1 || day > 31);
+
+		do
+		{
+			hour = Integer.valueOf( cu.prompt( "enter a Hour ", "" + strHour ) );
+		} while (hour < 0 || hour > 24);
+
+		do
+		{
+			minute = Integer.valueOf( cu.prompt( "enter a Minute ", "" + strMinute ) );
+		} while (minute < 0 || minute > 60);
+
+		//do
+		//{
+		//	second = Integer.valueOf( cu.prompt( "enter a Second ", "" + strSecond ) );
+		//} while (second < 0 || second > 60);
+		second = Integer.valueOf( strSecond ) ;
+
+		Calendar c = Calendar.getInstance();
+		c.set(year, month -1, day, hour, minute, second);
+		Date dateReport = c.getTime();
+
+		outputReport = cu.prompt( "enter Output Report Collection ", "" + outputReportSparse );
+		executeSparseTimeserieReport( outputReport, dateReport );
 	}
 
 	public void bsonExamples()
@@ -646,21 +852,25 @@ public class timeseries  implements controllerInterface
 		setup();
 		HashMap<String, String> options = new HashMap<String,String>();
 
-		options.put("1", "simple timeserie report");
-		options.put("2", "bson examples");
-		options.put("3", "import timeseries from thingSnapshot temporal");
+		options.put("1", "Dense timeserie report");
+		options.put("2", "Sparse timeserie report");
+		options.put("3", "bson examples");
+		options.put("4", "import timeseries from thingSnapshot temporal");
 
 		Integer option = 0;
 		while (option != null) {
 			option = cu.showMenu("blink options", options );
 			if (option != null) {
 				if (option == 0) {
-					timeserieReport();
+					denseTimeserieReport();
 				}
 				if (option == 1) {
-					bsonExamples();
+					sparseTimeserieReport();
 				}
 				if (option == 2) {
+					bsonExamples();
+				}
+				if (option == 3) {
 					importTimeseries();
 				}
 

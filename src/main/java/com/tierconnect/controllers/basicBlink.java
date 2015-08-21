@@ -46,7 +46,7 @@ public class basicBlink  implements controllerInterface {
 	}
 
 	CommonUtils cu;
-	String lastSerialNumber = "000000000000000000001";
+	String lastSerialNumber = "000000000000000000100";
 	Integer lastPosx = 0;
 	Integer lastPosy = 0;
 
