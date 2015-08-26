@@ -8,7 +8,6 @@ import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
-import com.mongodb.MongoException;
 import com.tierconnect.dev.controllerInterface;
 import com.tierconnect.utils.CommonUtils;
 import com.tierconnect.utils.MqttUtils;
@@ -79,7 +78,7 @@ public class createSharafThings implements controllerInterface
 		String status = "";
 
 		double rand = r.nextDouble();
-		if ( isBetween( rand, 0.4, 0.7) ) {
+		if ( isBetween( rand, 0.0, 0.7) ) {
 			status = statuses[1];
 		}
 		if ( isBetween( rand, 0.7, 0.9) ) {
@@ -102,11 +101,12 @@ public class createSharafThings implements controllerInterface
 				"Samsumg", "Nokia", "Apple", "Sony", "Mitsubishi", "Radiohead", "Linksys", "Logitech",
 				"IBM", "Lenovo", "LG", "Lava", "Lafaeda", "Kinect", "Kenwood", "Kesington",
 				"Kaspersky", "Karcher", "Jumbox", "Jobri", "JBL", "Iris", "Honeywell", "Hitachi",
-				"Genious", "Garmin", "Fuji", "Ferrari", "Electrolux", "Dell", "Dlink", "Daewoo"
+				"Genious", "Garmin", "Fuji", "Ferrari", "Electrolux", "Dell", "Dlink", "Daewoo",
+				"HP", "Casio", "Cannon", "Dell", "Atari", "IBM", "Yahoo", "Google"
 		};
 		Random r = new Random();
 
-		int rand = r.nextInt( 24);
+		int rand = r.nextInt( brands.length -1);
 
 
 		return brands[ rand];
@@ -129,90 +129,12 @@ public class createSharafThings implements controllerInterface
 		return zones[ rand];
 	}
 
-
-	private BasicDBObject getNewSharafThing(int index) {
-
-		String serial = String.format( "%021d", index );
-		Date timeNow = new Date();
-		Random r = new Random();
-
-		BasicDBObject locationbson = new BasicDBObject("x",  r.nextDouble()*3+49 )
-				.append("y", r.nextDouble()*3+40)
-				.append("z", 0);
-
-		BasicDBObject locationxyzbson = new BasicDBObject("x", r.nextDouble()*50+100)
-				.append("y", r.nextDouble()*50+100)
-				.append("z", 0);
-
-		BasicDBObject fields = new BasicDBObject("eNode", null)
-				.append("IsNotDetected",   null)
-				.append("Timestamp",       timeNow)
-				.append("itemcode",        serial)
-				.append("IsMisplaced",     null)
-				.append("productDescrip",  "product description for product " + serial)
-				.append("status",          getRandomStatus() )
-				.append("doorEvent",       null)
-				.append("shift",           null)
-				.append("AssignedZone",    null)
-				.append("facilityCode",    "Sharaf")
-				.append("Group",           null)
-				.append("StockType",       null)
-				.append("registered",      null)
-				.append("lastDetectTime",  null)
-				.append("DisplayProduct",  null)
-				.append("Department",      null)
-				.append("zone",            getRandomZone() )
-				.append("serialNUM",       serial)
-				.append("logicalReader",   "L3-S45-LR")
-				.append("location",        locationbson)
-				.append("locationXYZ",     locationxyzbson)
-				.append("brand",           getRandomBrand() )
-				.append("lastLocateTime",  null)
-				.append("supplier",        getRandomBrand() )
-				.append("IsAlreadyBuzzed", null)
-				.append("SKU",             null)
-				.append("image",           null);
-
-		BasicDBObject doc = new BasicDBObject("name", serial)
-				.append("serial",            serial)
-				.append("createdByUser_id",  1 )
-				.append("group_id",          3)
-				.append("groupTypeFloor_id", null)
-				.append("parent_id",         null)
-				.append("thingType_id",      3)
-				.append("fields",            fields);
-
-		return doc;
-	}
-
 	public void setup()
 	{
 		thingsCollection        = cu.db.getCollection("things");
 		thingsHistoryCollection = cu.db.getCollection("things_history");
 
 		mq = new MqttUtils( "localhost", 1883);
-
-	}
-
-	public void loop(int index)
-	{
-		loopcounter ++;
-		System.out.print(index);
-
-		BasicDBObject doc = getNewSharafThing(index);
-
-		try {
-			thingsCollection.insert(doc);
-			System.out.println(doc);
-		} catch(MongoException me) {
-			System.out.println(cu.ANSI_RED);
-			System.out.println(me.getMessage());
-			System.out.println(me);
-			System.out.println(cu.ANSI_BLACK);
-			me.printStackTrace();
-			System.exit(0);
-		}
-
 	}
 
 
@@ -379,9 +301,9 @@ public class createSharafThings implements controllerInterface
 			for (i=0; i < THING_PER_BLINK; i++) {
 				serial = nextSerialNumber();
 
-				msg.append( serial + "," + time + ",sGroup," + "3" + "\n");
-				msg.append( serial + "," + time + ",facilityCode," + "3" + "\n");
-				msg.append( serial + "," + time + ",serialNUM," + serial + "\n");
+				//msg.append( serial + "," + time + ",sGroup," + "3" + "\n");
+				//msg.append( serial + "," + time + ",facilityCode," + "3" + "\n");
+				//msg.append( serial + "," + time + ",serialNUM," + serial + "\n");
 				msg.append( serial + "," + time + ",lastLocateTime," + now + "\n");
 				msg.append( serial + "," + time + ",lastDetectTime," + now + "\n");
 				msg.append( serial + "," + time + ",Timestamp," + timeNow + "\n");
@@ -389,23 +311,23 @@ public class createSharafThings implements controllerInterface
 				msg.append( serial + "," + time + ",itemcode," + getRandomItemCode() + "\n");
 				msg.append( serial + "," + time + ",logicalReader," + getRandomLR() + "\n");
 				msg.append( serial + "," + time + ",eNode," + getRandomEnode() + "\n");
-				msg.append( serial + "," + time + ",SKU," + "" + "\n");
+				//msg.append( serial + "," + time + ",SKU," + "" + "\n");
 				msg.append( serial + "," + time + ",IsAlreadyBuzzed," + getRandomBoolean() + "\n");
 				msg.append( serial + "," + time + ",IsNotDetected," + getRandomBoolean() + "\n");
 				msg.append( serial + "," + time + ",FindIT," + getRandomBoolean() + "\n");
 				msg.append( serial + "," + time + ",IsMisplaced," + getRandomBoolean() + "\n");
-				msg.append( serial + "," + time + ",DocumentNum," + serialNumber + "\n");
+				//msg.append( serial + "," + time + ",DocumentNum," + serialNumber + "\n");
 				msg.append( serial + "," + time + ",Department,"  + "default department" + "\n");
 				msg.append( serial + "," + time + ",supplier,"    + "default supplier for " + serial + "\n");
 				msg.append( serial + "," + time + ",DisplayProduct," + "default display product for " + serial + "\n");
 				msg.append( serial + "," + time + ",location,"    + "-118.443969;34.048092;0.0" + "\n");
 				msg.append( serial + "," + time + ",locationXYZ," + "7.0;7.0;0.0" + "\n");
 				msg.append( serial + "," + time + ",productDescrip," + "default product description for " + serial + "\n");
-				msg.append( serial + "," + time + ",image,"     + "default image for " + serial + "\n");
+				//msg.append( serial + "," + time + ",image,"     + "default image for " + serial + "\n");
 				msg.append( serial + "," + time + ",StockType," + "default stock type for " + serial + "\n");
 				msg.append( serial + "," + time + ",brand,"     + getRandomBrand() + "\n");
 				msg.append( serial + "," + time + ",AssignedZone," + getRandomZone() + "\n");
-				msg.append( serial + "," + time + ",registered,"   + getRandomBoolean() + "\n");
+				//msg.append( serial + "," + time + ",registered,"   + getRandomBoolean() + "\n");
 				msg.append( serial + "," + time + ",price,"   + getRandomPrice() + "\n");
 				msg.append( serial + "," + time + ",touches," + "0" + "\n");
 				msg.append( serial + "," + time + ",likes,"   + "0" + "\n");
@@ -474,7 +396,6 @@ public class createSharafThings implements controllerInterface
 			msg.append( serialNumber + "," + time + ",lastLocateTime," + time + "\n" );
 			msg.append( serialNumber + "," + time + ",lastDetectTime," + time + "\n" );
 			msg.append( serialNumber + "," + time + ",status," + getRandomStatus() + "\n" );
-			msg.append( serialNumber + "," + time + ",location,-118.44395517462448;34.04811656588989;0.0\n" );
 			msg.append( serialNumber + "," + time + ",locationXYZ," + r.nextInt( 499 ) + ".0;" + r.nextInt( 499 ) + ".0;0.0\n" );
 			msg.append( serialNumber + "," + time + ",brand," + getRandomBrand() + "\n" );
 

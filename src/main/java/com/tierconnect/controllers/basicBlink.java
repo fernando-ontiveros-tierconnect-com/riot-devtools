@@ -59,7 +59,7 @@ public class basicBlink  implements controllerInterface {
 
 
 	public String getDescription() {
-		return "send blinks to Ale Bridge";
+		return "send simple blinks to Ale Bridge";
 	}
 
 	public void setup()

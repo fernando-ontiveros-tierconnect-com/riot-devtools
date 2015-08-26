@@ -36,7 +36,7 @@ public class zonesBlink  implements controllerInterface {
 
 
 	public String getDescription() {
-		return "send blinks to Specific Zones";
+		return "send Zone changes blinks to Ale Bridge";
 	}
 
 	public void setup()

@@ -47,6 +47,7 @@ public class Main {
 			"mapreduce",
 			"timeseries",
 			"createSharafThings",
+			"nativeObjects",
 			"unknown"
 	};
 
