@@ -45,10 +45,10 @@ public class Main {
 	String cmdClasses[] = {
 			"basicBlink",
 			"zonesBlink",
+			"nativeObjects",
+			"SharafEnterprise",
 			"mapreduce",
 			"timeseries",
-			"createSharafThings",
-			"nativeObjects",
 			"unknown"
 	};
 

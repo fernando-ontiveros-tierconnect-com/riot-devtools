@@ -152,7 +152,7 @@ public class zonesBlink  implements controllerInterface {
 
 		Integer option = 0;
 		while (option != null) {
-			option = cu.showMenu("blink options", options );
+			option = cu.showMenu("Zone blink options", options );
 			if (option != null) {
 				if (option == 0) {
 					sendZoneBlink("000000000000000000100", "Stockroom");

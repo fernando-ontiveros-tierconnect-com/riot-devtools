@@ -1,8 +1,5 @@
 package com.tierconnect.controllers;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.BasicDBObject;
 import com.mongodb.BulkWriteOperation;
 import com.mongodb.DBCollection;
@@ -10,24 +7,13 @@ import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.tierconnect.dev.controllerInterface;
 import com.tierconnect.utils.CommonUtils;
-import com.tierconnect.utils.MqttUtils;
 import com.tierconnect.utils.TimerUtils;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
@@ -35,7 +21,7 @@ import java.util.Set;
 /**
  * Created by fernando on 7/2/15.
  */
-public class createSharafThings implements controllerInterface
+public class SharafEnterprise implements controllerInterface
 {
 	CommonUtils cu;
 
@@ -58,8 +44,6 @@ public class createSharafThings implements controllerInterface
 	BasicDBObject docs[];
 	BulkWriteOperation builder;
 	Long loopcounter = 0L;
-
-	MqttUtils mq;
 
 	public void setCu(CommonUtils cu) {
 		this.cu = cu;
@@ -134,7 +118,13 @@ public class createSharafThings implements controllerInterface
 		thingsCollection        = cu.db.getCollection("things");
 		thingsHistoryCollection = cu.db.getCollection("things_history");
 
-		mq = new MqttUtils( "localhost", 1883);
+		//ToDo: improve this
+		Properties prop = cu.readConfigFile();
+		String broker = prop.getProperty( "mqtt.broker" );
+		String clientId = prop.getProperty( "mqtt.clientId" );
+		int qos = Integer.parseInt( prop.getProperty( "mqtt.qos" ));
+
+		cu.setupMqtt(broker, clientId, qos, null, null);
 	}
 
 
@@ -143,7 +133,7 @@ public class createSharafThings implements controllerInterface
 	}
 
 	public void createThingTypes() {
-		cu.createThingTypeFromFile ("/sharafRFID.txt");
+		cu.createThingTypeFromFile( "/sharafRFID.txt" );
 
 	}
 
@@ -263,7 +253,7 @@ public class createSharafThings implements controllerInterface
 
 			}
 
-			mq.publishSyncMessage(topic, msg.toString());
+			cu.publishSyncMessage(topic, msg.toString());
 			cu.sleep(delayBetweenThings );
 
 			created += THING_PER_BLINK;
@@ -352,7 +342,7 @@ public class createSharafThings implements controllerInterface
 
 		}
 
-		mq.publishSyncMessage(topic, msg.toString());
+		cu.publishSyncMessage(topic, msg.toString());
 		if (delayBetweenThings > 0)
 		{
 			cu.sleep( delayBetweenThings );
@@ -461,7 +451,7 @@ public class createSharafThings implements controllerInterface
 
 		Integer option = 0;
 		while (option != null) {
-			option = cu.showMenu("blink options", options );
+			option = cu.showMenu("Sharaf Enterprise options", options );
 			if (option != null) {
 				if (option == 0) {
 					createThingTypes();

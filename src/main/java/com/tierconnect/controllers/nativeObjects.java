@@ -61,14 +61,13 @@ public class nativeObjects implements controllerInterface
 	public String getDescription()
 	{
 
-		return "Implementation of Native Objects";
+		return "native Objects";
 	}
 
 	public void setup()
 	{
 		thingsCollection = cu.db.getCollection( "things" );
 		outputCollection = cu.db.getCollection( "mr_reusableTag" );
-
 
 		//ToDo: improve this
 		Properties prop = cu.readConfigFile();
@@ -77,7 +76,6 @@ public class nativeObjects implements controllerInterface
 		int qos = Integer.parseInt( prop.getProperty( "mqtt.qos" ));
 
 	    cu.setupMqtt(broker, clientId, qos, null, null);
-
 	}
 
 	private String castSerialNumber( Long n )
