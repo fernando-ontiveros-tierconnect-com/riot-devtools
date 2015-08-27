@@ -1,5 +1,8 @@
 package com.tierconnect.utils;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
@@ -8,15 +11,27 @@ import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoException;
 import com.mongodb.WriteConcern;
+import com.tierconnect.controllers.mapreduce;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
+import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,8 +68,13 @@ public class CommonUtils
 	DBCollection thingsCollection;
     int arrivedMessage = 0;
 
+	//setup values
+	String servicesApi;
+	String mqtthost;
+	String mqttport;
 
-    public CommonUtils() {
+
+	public CommonUtils() {
     }
 
     public String moveTo(int x, int y)
@@ -79,8 +99,11 @@ public class CommonUtils
                 mqttClient.setCallback(callback);
             }
             mqttClient.connect(connOpts);
-            mqttClient.subscribe(topic);
-            System.out.println(moveTo(1,9) + ANSI_GREEN + "Connected to Mqtt broker: "+broker + ANSI_BLACK);
+			if (topic != null)
+			{
+				mqttClient.subscribe( topic );
+			}
+            System.out.println( ANSI_GREEN + "Connected to Mqtt broker: " + ANSI_BLACK + broker );
 
         } catch(MqttException me) {
             System.out.println(ANSI_RED);
@@ -150,6 +173,11 @@ public class CommonUtils
 
             prop.load(input);
 
+			//generic values
+			servicesApi = prop.getProperty( "services.api" );
+			mqtthost    = prop.getProperty("mqtt.host");
+			mqttport    = prop.getProperty("mqtt.port");
+
             return prop;
 
         } catch (IOException ex) {
@@ -169,6 +197,21 @@ public class CommonUtils
             return prop;
         }
     }
+
+	public String read( String fname ) throws IOException
+	{
+		InputStream is = mapreduce.class.getResourceAsStream( fname );
+		InputStreamReader isr = new InputStreamReader( is );
+		BufferedReader br = new BufferedReader( isr );
+		StringBuffer sb = new StringBuffer();
+		String line;
+		while( (line = br.readLine()) != null )
+		{
+			sb.append( line + "\n" );
+		}
+		br.close();
+		return sb.toString();
+	}
 
 	//menu functions
 	public void showItemMenu(String i, String option)
@@ -392,6 +435,139 @@ public class CommonUtils
 			tagIn = value;
 		}
 		return tagIn;
+	}
+
+
+	public HashMap<String,Object> httpGetMessage(String url) throws IOException, URISyntaxException
+	{
+		CloseableHttpClient httpclient = HttpClients.createDefault();
+
+		HttpGet http = new HttpGet( servicesApi + url);
+		HashMap<String,Object> res = new HashMap<String,Object>();
+
+		http.setHeader("Content-Type", "application/json");
+		http.setHeader("Api_key", "root");
+
+		CloseableHttpResponse response = httpclient.execute( http );
+		try
+		{
+			InputStream is = response.getEntity().getContent();
+			InputStreamReader isr = new InputStreamReader( is );
+			BufferedReader br = new BufferedReader( isr );
+			String resp = "";
+			String line;
+			while( (line = br.readLine()) != null )
+			{
+				resp += line;
+			}
+
+			JsonFactory factory = new JsonFactory();
+			ObjectMapper mapper = new ObjectMapper(factory);
+			TypeReference<HashMap<String,Object>> typeRef
+					= new TypeReference<HashMap<String,Object>>() {};
+
+			try {
+				res = mapper.readValue(resp, typeRef);
+				//System.out.println("Got " + res);
+			} catch (Exception e) {
+
+			}
+		}
+		finally
+		{
+			response.close();
+			return res;
+		}
+	}
+
+	private HashMap<String,Object> httpPutMessage(String url, String body) throws IOException, URISyntaxException
+	{
+		CloseableHttpClient httpclient = HttpClients.createDefault();
+
+		HttpPut http = new HttpPut(servicesApi + url);
+		HashMap<String,Object> res = new HashMap<String,Object>();
+
+		http.setHeader("Content-Type", "application/json");
+		http.setHeader("Api_key", "root");
+
+		StringEntity entity = new StringEntity( body, ContentType.create( "text/plain", "UTF-8" ) );
+		http.setEntity( entity );
+		CloseableHttpResponse response = httpclient.execute( http );
+		try
+		{
+			InputStream is = response.getEntity().getContent();
+			InputStreamReader isr = new InputStreamReader( is );
+			BufferedReader br = new BufferedReader( isr );
+			String resp = "";
+			String line;
+			while( (line = br.readLine()) != null )
+			{
+				resp += line;
+			}
+
+			JsonFactory factory = new JsonFactory();
+			ObjectMapper mapper = new ObjectMapper(factory);
+			TypeReference<HashMap<String,Object>> typeRef
+					= new TypeReference<HashMap<String,Object>>() {};
+
+			try {
+				res = mapper.readValue(resp, typeRef);
+				System.out.println("Got " + res);
+			} catch (Exception e) {
+
+			}
+		}
+		finally
+		{
+			response.close();
+			return res;
+		}
+	}
+
+	public void publishSyncMessage(String topic, String content)
+	{
+		try {
+			MqttMessage message = new MqttMessage(content.getBytes());
+			mqttClient.publish(topic, message);
+		}
+		catch(MqttException me)
+		{
+			System.out.println("reason " + ANSI_RED + me.getReasonCode() + ANSI_BLACK);
+			System.out.println("msg " + me.getMessage() );
+		} catch(Exception e)
+		{
+			System.out.println("msg " + ANSI_RED + e.getMessage() + ANSI_BLACK);
+		}
+	}
+
+	public void createThingTypeFromFile ( String thingTypeFile )
+	{
+		HashMap<String,Object> res;
+		try {
+			String body = read(thingTypeFile);
+
+			res = httpPutMessage("http://localhost:8080/riot-core-services/api/thingType", body);
+
+			if (res.containsKey( "error" ) )
+			{
+				System.out.println( ANSI_RED + res.get("error") + ANSI_BLACK);
+			}
+			else
+			{
+				System.out.println( res);
+				//send a tickle to update corebridge
+				System.out.println( ANSI_BLUE + "send a tickle to update corebridge" + ANSI_BLUE);
+				sleep( 500 );
+
+				String topic = "/v1/edge/dn/_ALL_/update/thingTypes";
+
+				publishSyncMessage( topic, "" );
+			}
+
+		} catch (Exception e) {
+			System.out.println(e.getCause());
+		}
+
 	}
 
 }

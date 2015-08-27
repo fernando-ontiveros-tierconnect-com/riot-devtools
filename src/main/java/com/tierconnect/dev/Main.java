@@ -34,6 +34,7 @@ public class Main {
 	String mongoDatabase;
 	int    mongoPort;
 
+	String mqttHost;
 
 	//loop control
 	int arrivedMessage = 0;
@@ -66,6 +67,8 @@ public class Main {
 		mongoHost     = prop.getProperty("mongodb.host");
 		mongoDatabase = prop.getProperty("mongodb.database");
 		mongoPort     = Integer.parseInt(prop.getProperty("mongodb.port"));
+
+		mqttHost      = prop.getProperty("mqtt.broker");
 
 	}
 

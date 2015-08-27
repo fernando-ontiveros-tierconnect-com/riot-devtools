@@ -142,80 +142,9 @@ public class createSharafThings implements controllerInterface
 		return "Sharaf Enterprise";
 	}
 
-	private String read( String fname ) throws IOException
-	{
-		InputStream is = mapreduce.class.getResourceAsStream( fname );
-		InputStreamReader isr = new InputStreamReader( is );
-		BufferedReader br = new BufferedReader( isr );
-		StringBuffer sb = new StringBuffer();
-		String line;
-		while( (line = br.readLine()) != null )
-		{
-			sb.append( line + "\n" );
-		}
-		br.close();
-		return sb.toString();
-	}
-
-
 	public void createThingTypes() {
-		HashMap<String,Object> res;
-		try {
-			String body = read("/sharafRFID.txt");
-			res = httpPutMessage("http://localhost:8080/riot-core-services/api/thingType", body);
-			System.out.println( res);
+		cu.createThingTypeFromFile ("/sharafRFID.txt");
 
-
-		} catch (Exception e) {
-			System.out.println(e.getCause());
-		}
-	}
-
-	private HashMap<String,Object> httpPutMessage(String url, String body) throws IOException, URISyntaxException
-	{
-		CloseableHttpClient httpclient = HttpClients.createDefault();
-
-		//HttpPost httppost = new HttpPost( url );
-		HttpPut http = new HttpPut(url);
-		HashMap<String,Object> res = new HashMap<String,Object>();
-
-		http.setHeader("Content-Type", "application/json");
-		http.setHeader("Api_key", "root");
-
-		StringEntity entity = new StringEntity( body, ContentType.create( "text/plain", "UTF-8" ) );
-		http.setEntity( entity );
-		CloseableHttpResponse response = httpclient.execute( http );
-		try
-		{
-			InputStream is = response.getEntity().getContent();
-			InputStreamReader isr = new InputStreamReader( is );
-			BufferedReader br = new BufferedReader( isr );
-			String resp = "";
-			String line;
-			while( (line = br.readLine()) != null )
-			{
-				resp += line;
-			}
-
-			JsonFactory factory = new JsonFactory();
-			ObjectMapper mapper = new ObjectMapper(factory);
-			TypeReference<HashMap<String,Object>> typeRef
-					= new TypeReference<HashMap<String,Object>>() {};
-
-			try {
-				res = mapper.readValue(resp, typeRef);
-				System.out.println("Got " + res);
-			} catch (Exception e) {
-
-			}
-
-
-		}
-		finally
-		{
-			response.close();
-			return res;
-		}
 	}
 
 	public String formatSerialNumber ( Long n )
