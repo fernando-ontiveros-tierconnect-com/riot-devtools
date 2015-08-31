@@ -39,13 +39,16 @@ public class nativeObjects implements controllerInterface
 	String tag;
 
 	String thingTypeCode = "default_gps_thingtype";
-	String jacketsThingTypeCode = "jackets_code";
+	String multipleThingTypeCode = "Native.Objects.Multiple";
 	String defaultRfidThingTypeCode = "default_rfid_thingtype";
 	String statusThingField = "status";
 	String categoryThingField = "category";
 	String logicalReaderField = "logicalReader";
+	String multipleLogicalReaderField = "multiLogicalReader";
 	String zoneField = "zone";
+	String multiplezoneField = "multiZone";
 	String shiftField = "shift";
+	String multipleshiftField = "multiShift";
 
 	String thingFieldJSON = "shifts";
 
@@ -73,9 +76,14 @@ public class nativeObjects implements controllerInterface
 		Properties prop = cu.readConfigFile();
 		String broker = prop.getProperty( "mqtt.broker" );
 		String clientId = prop.getProperty( "mqtt.clientId" );
-		int qos = Integer.parseInt( prop.getProperty( "mqtt.qos" ));
+		int qos = Integer.parseInt( prop.getProperty( "mqtt.qos" ) );
 
 	    cu.setupMqtt(broker, clientId, qos, null, null);
+	}
+
+	public void createThingTypes() {
+		cu.createThingTypeFromFile( "/nativeObjectsMultiple.txt" );
+
 	}
 
 	private String castSerialNumber( Long n )
@@ -298,12 +306,12 @@ public class nativeObjects implements controllerInterface
 		System.out.println( "        field: " + cu.ANSI_BLUE + statusThingField + cu.ANSI_BLACK + "" );
 		System.out.println( "        value: " + cu.ANSI_BLUE + commaValue + cu.ANSI_BLACK + "" );
 
-		DBObject prevThing = cu.getThing( serialNumber );
+		DBObject prevThing = cu.getThing( serialNumber, defaultRfidThingTypeCode );
 
 		cu.publishSyncMessage( topic, sb.toString() );
 		cu.sleep( 1000 );
 
-		DBObject newThing = cu.getThing( serialNumber );
+		DBObject newThing = cu.getThing( serialNumber, defaultRfidThingTypeCode );
 		cu.diffThings( newThing, prevThing );
 	}
 
@@ -326,6 +334,29 @@ public class nativeObjects implements controllerInterface
 			return entry.get( "id" ).toString();
 		}
 
+	}
+
+	private String getMultipleRandomLR()
+	{
+		Random r = new Random();
+		StringBuilder s = new StringBuilder( "[" );
+		int n = r.nextInt( 3 ) +1;
+		for (int i = 0; i < n; i++ ) {
+			if (!s.toString().equals( "[" )) {
+				s.append( ", " );
+			}
+			String strId = getRandomLR();
+			String value = '"' + strId + '"';
+			try
+			{
+				value = "" + Long.valueOf( strId);
+			} catch( NumberFormatException e ) {
+			}
+
+			s.append( value );
+		}
+		s.append( "]" );
+		return s.toString();
 	}
 
 	private void getLogicalReaders()
@@ -389,12 +420,53 @@ public class nativeObjects implements controllerInterface
 		System.out.println( "        field: " + cu.ANSI_BLUE + logicalReaderField + cu.ANSI_BLACK + "" );
 		System.out.println( "        value: " + cu.ANSI_BLUE + lrValue + cu.ANSI_BLACK + "" );
 
-		DBObject prevThing = cu.getThing( serialNumber );
+		DBObject prevThing = cu.getThing( serialNumber, defaultRfidThingTypeCode );
 
 		cu.publishSyncMessage( topic, sb.toString() );
 		cu.sleep( 1000 );
 
-		DBObject newThing = cu.getThing( serialNumber );
+		DBObject newThing = cu.getThing( serialNumber, defaultRfidThingTypeCode );
+		cu.diffThings( newThing, prevThing );
+	}
+
+	private void sendMultipleLogicalReaderBlink()
+	{
+
+		getLogicalReaders();
+		StringBuffer sb = new StringBuffer();
+
+		String serialNumber = "";
+
+		serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber", lastSerialNumber );
+		lastSerialNumber = serialNumber.substring( serialNumber.length() - 21, serialNumber.length() );
+		serialNumber = lastSerialNumber;
+
+		multipleThingTypeCode = cu.prompt( "enter the thingTypeCode", multipleThingTypeCode );
+
+		multipleLogicalReaderField = cu.prompt( "enter the udf name", multipleLogicalReaderField );
+
+		String lrValue = getMultipleRandomLR();
+		lrValue = cu.prompt( "enter the Logical Reader Value", lrValue );
+
+		String topic = "/v1/data/ALEB/" + multipleThingTypeCode;
+
+		Long time = new Date().getTime();
+		sb.append( " sn," + sequenceNumber + "\n" );
+		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
+
+		sb.append( serialNumber + "," + time + "," + multipleLogicalReaderField + "," + "\"" + lrValue + "\"\n" );
+
+		System.out.println( " serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "" );
+		System.out.println( "thingTypeCode: " + cu.ANSI_BLUE + multipleThingTypeCode + cu.ANSI_BLACK + "" );
+		System.out.println( "        field: " + cu.ANSI_BLUE + multipleLogicalReaderField + cu.ANSI_BLACK + "" );
+		System.out.println( "        value: " + cu.ANSI_BLUE + lrValue + cu.ANSI_BLACK + "" );
+
+		DBObject prevThing = cu.getThing( serialNumber, multipleThingTypeCode );
+
+		cu.publishSyncMessage( topic, sb.toString() );
+		cu.sleep( 1000 );
+
+		DBObject newThing = cu.getThing( serialNumber, multipleThingTypeCode );
 		cu.diffThings( newThing, prevThing );
 	}
 
@@ -417,6 +489,29 @@ public class nativeObjects implements controllerInterface
 			return entry.get( "id" ).toString();
 		}
 
+	}
+
+	private String getMultipleRandomZone()
+	{
+		Random r = new Random();
+		StringBuilder s = new StringBuilder( "[" );
+		int n = r.nextInt( 3 ) +1;
+		for (int i = 0; i < n; i++ ) {
+			if (!s.toString().equals( "[" )) {
+				s.append( ", " );
+			}
+			String strId = getRandomZone();
+			String value = '"' + strId + '"';
+			try
+			{
+				value = "" + Long.valueOf( strId);
+			} catch( NumberFormatException e ) {
+			}
+
+			s.append( value );
+		}
+		s.append( "]" );
+		return s.toString();
 	}
 
 
@@ -449,7 +544,6 @@ public class nativeObjects implements controllerInterface
 
 	}
 
-
 	private void sendZoneBlink()
 	{
 		getZones();
@@ -481,12 +575,52 @@ public class nativeObjects implements controllerInterface
 		System.out.println( "        field: " + cu.ANSI_BLUE + zoneField + cu.ANSI_BLACK + "" );
 		System.out.println( "        value: " + cu.ANSI_BLUE + zoneValue + cu.ANSI_BLACK + "" );
 
-		DBObject prevThing = cu.getThing( serialNumber );
+		DBObject prevThing = cu.getThing( serialNumber, defaultRfidThingTypeCode );
 
 		cu.publishSyncMessage( topic, sb.toString() );
 		cu.sleep( 1000 );
 
-		DBObject newThing = cu.getThing( serialNumber );
+		DBObject newThing = cu.getThing( serialNumber, defaultRfidThingTypeCode );
+		cu.diffThings( newThing, prevThing );
+	}
+
+	private void sendMultipleZoneBlink()
+	{
+		getZones();
+		StringBuffer sb = new StringBuffer();
+
+		String serialNumber = "";
+
+		serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber", lastSerialNumber );
+		lastSerialNumber = serialNumber.substring( serialNumber.length() - 21, serialNumber.length() );
+		serialNumber = lastSerialNumber;
+
+		multipleThingTypeCode = cu.prompt( "enter the thingTypeCode", multipleThingTypeCode );
+
+		multiplezoneField = cu.prompt( "enter the udf name", multiplezoneField );
+
+		String zoneValue = getMultipleRandomZone();
+		zoneValue = cu.prompt( "enter the Zone Value", zoneValue );
+
+		String topic = "/v1/data/ALEB/" + multipleThingTypeCode;
+
+		Long time = new Date().getTime();
+		sb.append( " sn," + sequenceNumber + "\n" );
+		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
+
+		sb.append( serialNumber + "," + time + "," + multiplezoneField + "," + "\"" + zoneValue + "\"\n" );
+
+		System.out.println( " serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "" );
+		System.out.println( "thingTypeCode: " + cu.ANSI_BLUE + multipleThingTypeCode + cu.ANSI_BLACK + "" );
+		System.out.println( "        field: " + cu.ANSI_BLUE + multiplezoneField + cu.ANSI_BLACK + "" );
+		System.out.println( "        value: " + cu.ANSI_BLUE + zoneValue + cu.ANSI_BLACK + "" );
+
+		DBObject prevThing = cu.getThing( serialNumber, multipleThingTypeCode );
+
+		cu.publishSyncMessage( topic, sb.toString() );
+		cu.sleep( 1000 );
+
+		DBObject newThing = cu.getThing( serialNumber, multipleThingTypeCode );
 		cu.diffThings( newThing, prevThing );
 	}
 
@@ -509,6 +643,29 @@ public class nativeObjects implements controllerInterface
 			return entry.get( "id" ).toString();
 		}
 
+	}
+
+	private String getMultipleRandomShift()
+	{
+		Random r = new Random();
+		StringBuilder s = new StringBuilder( "[" );
+		int n = r.nextInt( 3 ) +1;
+		for (int i = 0; i < n; i++ ) {
+			if (!s.toString().equals( "[" )) {
+				s.append( ", " );
+			}
+			String strId = getRandomShift();
+			String value = '"' + strId + '"';
+			try
+			{
+				value = "" + Long.valueOf( strId);
+			} catch( NumberFormatException e ) {
+			}
+
+			s.append( value );
+		}
+		s.append( "]" );
+		return s.toString();
 	}
 
 	private void getShifts()
@@ -570,12 +727,51 @@ public class nativeObjects implements controllerInterface
 		System.out.println( "        field: " + cu.ANSI_BLUE + shiftField + cu.ANSI_BLACK + "" );
 		System.out.println( "        value: " + cu.ANSI_BLUE + shiftValue + cu.ANSI_BLACK + "" );
 
-		DBObject prevThing = cu.getThing( serialNumber );
+		DBObject prevThing = cu.getThing( serialNumber, defaultRfidThingTypeCode );
 
 		cu.publishSyncMessage( topic, sb.toString() );
 		cu.sleep( 1000 );
 
-		DBObject newThing = cu.getThing( serialNumber );
+		DBObject newThing = cu.getThing( serialNumber, defaultRfidThingTypeCode );
+		cu.diffThings( newThing, prevThing );
+	}
+
+	private void sendMultipleShiftBlink() {
+		getShifts();
+		StringBuffer sb = new StringBuffer();
+
+		String serialNumber = "";
+
+		serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber", lastSerialNumber );
+		lastSerialNumber = serialNumber.substring( serialNumber.length() - 21, serialNumber.length() );
+		serialNumber = lastSerialNumber;
+
+		multipleThingTypeCode = cu.prompt( "enter the thingTypeCode", multipleThingTypeCode );
+
+		multipleshiftField = cu.prompt( "enter the udf name", multipleshiftField );
+
+		String shiftValue = getMultipleRandomShift();
+		shiftValue = cu.prompt( "enter the Shift Value", shiftValue );
+
+		String topic = "/v1/data/ALEB/" + multipleThingTypeCode;
+
+		Long time = new Date().getTime();
+		sb.append( " sn," + sequenceNumber + "\n" );
+		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
+
+		sb.append( serialNumber + "," + time + "," + multipleshiftField + "," + "\"" + shiftValue + "\"\n" );
+
+		System.out.println( " serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "" );
+		System.out.println( "thingTypeCode: " + cu.ANSI_BLUE + multipleThingTypeCode + cu.ANSI_BLACK + "" );
+		System.out.println( "        field: " + cu.ANSI_BLUE + multipleshiftField + cu.ANSI_BLACK + "" );
+		System.out.println( "        value: " + cu.ANSI_BLUE + shiftValue + cu.ANSI_BLACK + "" );
+
+		DBObject prevThing = cu.getThing( serialNumber, multipleThingTypeCode );
+
+		cu.publishSyncMessage( topic, sb.toString() );
+		cu.sleep( 1000 );
+
+		DBObject newThing = cu.getThing( serialNumber, multipleThingTypeCode );
 		cu.diffThings( newThing, prevThing );
 	}
 
@@ -650,12 +846,12 @@ public class nativeObjects implements controllerInterface
 		System.out.println("        field: " + cu.ANSI_BLUE + thingFieldJSON + cu.ANSI_BLACK + "");
 		System.out.println("        value: " + cu.ANSI_BLUE + jsonStr.toString() + cu.ANSI_BLACK + "");
 
-		DBObject prevThing = cu.getThing( serialNumber );
+		DBObject prevThing = cu.getThing( serialNumber, thingTypeCode );
 
 		cu.publishSyncMessage(topic, sb.toString());
 		cu.sleep( 1000 );
 
-		DBObject newThing = cu.getThing( serialNumber );
+		DBObject newThing = cu.getThing( serialNumber, thingTypeCode );
 		cu.diffThings( newThing, prevThing );
 	}
 
@@ -663,35 +859,55 @@ public class nativeObjects implements controllerInterface
 		setup();
 		HashMap<String, String> options = new HashMap<String,String>();
 
-		options.put("1", "send a CSV (comma separate values) to udf");
-		options.put("2", "send a LogicalReader to Default RFID Thingtype");
-		options.put("3", "send a Zone to Default RFID Thingtype");
-		options.put("4", "send a Shift to Default RFID Thingtype");
-		options.put("5", "send a JSON to udf");
+		options.put("1", "create ThingTypes");
+		options.put("2", "send a CSV (comma separate values) to udf");
+		options.put("3", "send simple LogicalReader to Default RFID Thingtype");
+		options.put("4", "send simple Zone to Default RFID Thingtype");
+		options.put("5", "send simple Shift to Default RFID Thingtype");
+		options.put("6", "send multiple LogicalReader to Multiple Native Object");
+		options.put("7", "send multiple Zone to Multiple Native Object");
+		options.put("8", "send multiple Shift to Multiple Native Object");
+		//options.put("9", "send a JSON to udf");
 
 		Integer option = 0;
 		while (option != null) {
 			option = cu.showMenu("Native Objects options", options );
 			if (option != null) {
 				if (option == 0) {
-					sendCommasBlink();
+					createThingTypes();
 				}
 
 				if (option == 1) {
-					sendLogicalReaderBlink();
+					sendCommasBlink();
 				}
 
 				if (option == 2) {
-					sendZoneBlink();
+					sendLogicalReaderBlink();
 				}
 
 				if (option == 3) {
-					sendShiftBlink();
+					sendZoneBlink();
 				}
 
 				if (option == 4) {
-					sendJSONBlink();
+					sendShiftBlink();
 				}
+
+				if (option == 5) {
+					sendMultipleLogicalReaderBlink();
+				}
+
+				if (option == 6) {
+					sendMultipleZoneBlink();
+				}
+
+				if (option == 7) {
+					sendMultipleShiftBlink();
+				}
+
+				//if (option == 5) {
+				//	sendJSONBlink();
+				//}
 
 				System.out.println(cu.ANSI_BLACK +  "\npress [enter] to continue");
 				Scanner in = new Scanner(System.in);

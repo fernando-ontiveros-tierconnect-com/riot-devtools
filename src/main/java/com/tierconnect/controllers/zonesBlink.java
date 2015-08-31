@@ -24,8 +24,7 @@ public class zonesBlink  implements controllerInterface {
 
 	CommonUtils cu;
 	String lastSerialNumber = "000000000000000000001";
-	Integer lastPosx = 0;
-	Integer lastPosy = 0;
+	String thingTypeCode = "default_rfid_thingtype";
 
 	DBCollection thingsCollection;
 	BasicDBObject docs[];
@@ -55,15 +54,12 @@ public class zonesBlink  implements controllerInterface {
 		String lr = "LR5";
 
 		if (tag == null) {
-			System.out.print(cu.ANSI_BLACK + "\nenter a serialNumber[" + cu.ANSI_GREEN + lastSerialNumber + cu.ANSI_BLACK + "]:");
-			String tagIn = in.nextLine();
-			if (tagIn.equals("")) {
-				tagIn = lastSerialNumber;
-			} else {
-				tagIn = "000000000000000000000" + tagIn;
-			}
-			tag = tagIn.substring(tagIn.length()-21, tagIn.length());
-			lastSerialNumber = tag;
+			serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber", lastSerialNumber );
+			lastSerialNumber = serialNumber.substring( serialNumber.length() - 21, serialNumber.length() );
+			tag = lastSerialNumber;
+
+			thingTypeCode = cu.prompt( "enter the thingTypeCode", thingTypeCode );
+
 		}
 
 		if (zone == "Stockroom") {
@@ -93,7 +89,7 @@ public class zonesBlink  implements controllerInterface {
 		System.out.println("   locationX: " + cu.ANSI_BLUE + posx + cu.ANSI_BLACK + "");
 		System.out.println("   locationY: " + cu.ANSI_BLUE + posy + cu.ANSI_BLACK + "");
 
-		DBObject prevThing = cu.getThing(tag);
+		DBObject prevThing = cu.getThing(tag, thingTypeCode);
 
 		OutputStream output = new OutputStream()
 		{
@@ -120,9 +116,7 @@ public class zonesBlink  implements controllerInterface {
 			alep.run( new ByteArrayInputStream(output.toString().getBytes()) );
 
 			cu.sleep(1000);
-			//cu.displayThing(prevThing);
-			//cu.displayThing(cu.getThing(tag));
-			cu.diffThings(cu.getThing(tag), prevThing);
+			cu.diffThings(cu.getThing(tag, thingTypeCode), prevThing);
 
 		} catch (IOException e) {
 			e.printStackTrace();

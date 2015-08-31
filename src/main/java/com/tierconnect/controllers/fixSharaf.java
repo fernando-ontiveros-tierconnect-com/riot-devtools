@@ -19,28 +19,6 @@ import java.util.Scanner;
  */
 public class fixSharaf  implements controllerInterface {
 
-	private void getThingFromMongo() {
-		String tag;
-		StringBuffer sb = new StringBuffer();
-		Scanner in;
-		in = new Scanner(System.in);
-
-		System.out.print(cu.ANSI_BLACK + "\nenter a serialNumber[" + cu.ANSI_GREEN + lastSerialNumber + cu.ANSI_BLACK + "]:");
-		String tagIn = in.nextLine();
-		if (tagIn.equals("")) {
-			tagIn = lastSerialNumber;
-		} else {
-			tagIn = "000000000000000000000" + tagIn;
-		}
-		tag = tagIn.substring(tagIn.length()-21, tagIn.length());
-		lastSerialNumber = tag;
-
-		System.out.println("serialNumber: " + cu.ANSI_BLUE + tag + cu.ANSI_BLACK + "");
-
-		DBObject prevThing = cu.getThing(tag);
-
-		cu.displayThing(prevThing);
-	}
 
 	CommonUtils cu;
 	String lastSerialNumber = "000000000000000000001";

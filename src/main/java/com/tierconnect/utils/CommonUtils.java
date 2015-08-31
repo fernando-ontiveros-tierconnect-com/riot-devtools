@@ -404,23 +404,43 @@ public class CommonUtils
 
 	}
 
+	@Deprecated
 	public DBObject getThing( String serialNumber) {
-        BasicDBObject query = new BasicDBObject("serialNumber", serialNumber);
-        DBCursor cursor;
-        DBObject doc = null;
+		BasicDBObject query = new BasicDBObject("serialNumber", serialNumber);
+		DBCursor cursor;
+		DBObject doc = null;
 
-        cursor = thingsCollection.find(query);
+		cursor = thingsCollection.find(query);
 
-        try {
-            while (cursor.hasNext()) {
-                doc = cursor.next();
-            }
-        } finally {
-            cursor.close();
-        }
+		try {
+			while (cursor.hasNext()) {
+				doc = cursor.next();
+			}
+		} finally {
+			cursor.close();
+		}
 
-        return doc;
-    }
+		return doc;
+	}
+
+	public DBObject getThing( String serialNumber, String thingTypeCode) {
+		BasicDBObject query = new BasicDBObject("serialNumber", serialNumber)
+				.append( "thingTypeCode", thingTypeCode );
+		DBCursor cursor;
+		DBObject doc = null;
+
+		cursor = thingsCollection.find(query);
+
+		try {
+			while (cursor.hasNext()) {
+				doc = cursor.next();
+			}
+		} finally {
+			cursor.close();
+		}
+
+		return doc;
+	}
 
 	public String prompt(String title, String value)
 	{
@@ -546,7 +566,7 @@ public class CommonUtils
 		try {
 			String body = read(thingTypeFile);
 
-			res = httpPutMessage("http://localhost:8080/riot-core-services/api/thingType", body);
+			res = httpPutMessage("thingType", body);
 
 			if (res.containsKey( "error" ) )
 			{

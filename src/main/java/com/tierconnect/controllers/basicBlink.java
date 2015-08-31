@@ -22,36 +22,32 @@ import java.util.Scanner;
  */
 public class basicBlink  implements controllerInterface {
 
-	private void getThingFromMongo() {
-		String tag;
-		StringBuffer sb = new StringBuffer();
-		Scanner in;
-		in = new Scanner(System.in);
-
-		System.out.print(cu.ANSI_BLACK + "\nenter a serialNumber[" + cu.ANSI_GREEN + lastSerialNumber + cu.ANSI_BLACK + "]:");
-		String tagIn = in.nextLine();
-		if (tagIn.equals("")) {
-			tagIn = lastSerialNumber;
-		} else {
-			tagIn = "000000000000000000000" + tagIn;
-		}
-		tag = tagIn.substring(tagIn.length()-21, tagIn.length());
-		lastSerialNumber = tag;
-
-		System.out.println("serialNumber: " + cu.ANSI_BLUE + tag + cu.ANSI_BLACK + "");
-
-		DBObject prevThing = cu.getThing(tag);
-
-		cu.displayThing(prevThing);
-	}
-
 	CommonUtils cu;
 	String lastSerialNumber = "000000000000000000100";
+	String thingTypeCode = "default_rfid_thingtype";
 	Integer lastPosx = 0;
 	Integer lastPosy = 0;
 
 	DBCollection thingsCollection;
 	BasicDBObject docs[];
+
+
+	private void getThingFromMongo() {
+		String serialNumber;
+
+		serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber",lastSerialNumber );
+		lastSerialNumber = serialNumber.substring(serialNumber.length()-21, serialNumber.length());
+		serialNumber = lastSerialNumber;
+
+		thingTypeCode = cu.prompt( "enter the thingTypeCode",thingTypeCode );
+
+		System.out.println("serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "");
+		System.out.println("   thingType: " + cu.ANSI_BLUE + thingTypeCode + cu.ANSI_BLACK + "");
+
+		DBObject prevThing = cu.getThing(serialNumber, thingTypeCode);
+
+		cu.displayThing(prevThing);
+	}
 
 	public void setCu(CommonUtils cu) {
 		this.cu = cu;
@@ -75,21 +71,14 @@ public class basicBlink  implements controllerInterface {
 		Random r = new Random();
 		Integer posx = 0, posy = 0;
 		String serialNumber = "";
-		String thingTypeCode = "default_rfid_thingtype";
 		String lr = "LR5";
 
-		if (tag == null) {
-			System.out.print(cu.ANSI_BLACK + "\nenter a serialNumber[" + cu.ANSI_GREEN + lastSerialNumber + cu.ANSI_BLACK + "]:");
-			String tagIn = in.nextLine();
-			if (tagIn.equals("")) {
-				tagIn = lastSerialNumber;
-			} else {
-				tagIn = "000000000000000000000" + tagIn;
-			}
-			tag = tagIn.substring(tagIn.length()-21, tagIn.length());
-			lastSerialNumber = tag;
 
-		}
+		serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber", lastSerialNumber );
+		lastSerialNumber = serialNumber.substring( serialNumber.length() - 21, serialNumber.length() );
+		serialNumber = lastSerialNumber;
+
+		thingTypeCode = cu.prompt( "enter the thingTypeCode", thingTypeCode );
 
 		if (random == null) {
 			//posx
@@ -129,13 +118,13 @@ public class basicBlink  implements controllerInterface {
 		sb.append("DELT,REL\n");
 		sb.append("\n");
 		sb.append("CS,-118.443969,34.048092,0.0,20.0,ft\n");
-		sb.append("LOC, 00:00:00," + tag + "," + posx + "," + posy + ",0," + lr + ",x3ed9371\n");
+		sb.append("LOC, 00:00:00," + serialNumber + "," + posx + "," + posy + ",0," + lr + ",x3ed9371\n");
 
-		System.out.println("serialNumber: " + cu.ANSI_BLUE + tag + cu.ANSI_BLACK + "");
+		System.out.println("serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "");
 		System.out.println("   locationX: " + cu.ANSI_BLUE + posx + cu.ANSI_BLACK + "");
 		System.out.println("   locationY: " + cu.ANSI_BLUE + posy + cu.ANSI_BLACK + "");
 
-		DBObject prevThing = cu.getThing(tag);
+		DBObject prevThing = cu.getThing(serialNumber, thingTypeCode);
 
 		OutputStream output = new OutputStream()
 		{
@@ -162,9 +151,7 @@ public class basicBlink  implements controllerInterface {
 			alep.run( new ByteArrayInputStream(output.toString().getBytes()) );
 
 			cu.sleep(1000);
-			//cu.displayThing(prevThing);
-			//cu.displayThing(cu.getThing(tag));
-			cu.diffThings(cu.getThing(tag), prevThing);
+			cu.diffThings(cu.getThing(serialNumber, thingTypeCode), prevThing);
 
 		} catch (IOException e) {
 			e.printStackTrace();
