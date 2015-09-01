@@ -1,0 +1,104 @@
+{
+"values" : [
+ {
+      "group.id":3,
+      "name": "SHIFT ONE",
+      "things": [],
+      "endTimeOfDay": 1700,
+      "active": true,
+      "daysOfWeek": "23456",
+      "zones": [],
+      "startTimeOfDay": 800
+    },
+    {
+      "group.id":3,
+      "name": "SHIFT TWO",
+      "things": [],
+      "endTimeOfDay": 1700,
+      "active": true,
+      "daysOfWeek": "23456",
+      "zones": [],
+      "startTimeOfDay": 800
+    },
+    {
+      "group.id":3,
+      "name": "SHIFT THREE",
+      "things": [],
+      "endTimeOfDay": 1700,
+      "active": true,
+      "daysOfWeek": "23456",
+      "zones": [],
+      "startTimeOfDay": 800
+    },
+    {
+      "group.id":3,
+      "name": "SHIFT FOUR",
+      "things": [],
+      "endTimeOfDay": 1700,
+      "active": true,
+      "daysOfWeek": "23456",
+      "zones": [],
+      "startTimeOfDay": 800
+    },
+    {
+      "group.id":3,
+      "name": "SHIFT FIVE",
+      "things": [],
+      "endTimeOfDay": 1700,
+      "active": true,
+      "daysOfWeek": "23456",
+      "zones": [],
+      "startTimeOfDay": 800
+    },
+    {
+      "group.id":3,
+      "name": "SHIFT SIX",
+      "things": [],
+      "endTimeOfDay": 1700,
+      "active": true,
+      "daysOfWeek": "23456",
+      "zones": [],
+      "startTimeOfDay": 800
+    },
+    {
+      "group.id":3,
+      "name": "SHIFT SEVEN",
+      "things": [],
+      "endTimeOfDay": 1700,
+      "active": true,
+      "daysOfWeek": "23456",
+      "zones": [],
+      "startTimeOfDay": 800
+    },
+    {
+      "group.id":3,
+      "name": "SHIFT EIGHT",
+      "things": [],
+      "endTimeOfDay": 1700,
+      "active": true,
+      "daysOfWeek": "23456",
+      "zones": [],
+      "startTimeOfDay": 800
+    },
+    {
+      "group.id":3,
+      "name": "SHIFT NINE",
+      "things": [],
+      "endTimeOfDay": 1700,
+      "active": true,
+      "daysOfWeek": "23456",
+      "zones": [],
+      "startTimeOfDay": 800
+    },
+    {
+      "group.id":3,
+      "name": "SHIFT TEN",
+      "things": [],
+      "endTimeOfDay": 1700,
+      "active": true,
+      "daysOfWeek": "23456",
+      "zones": [],
+      "startTimeOfDay": 800
+    }
+]
+}

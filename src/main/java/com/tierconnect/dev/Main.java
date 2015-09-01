@@ -47,7 +47,7 @@ public class Main {
 			"zonesBlink",
 			"nativeObjects",
 			"SharafEnterprise",
-			"mapreduce",
+			"parentChildren",
 			"timeseries",
 			"unknown"
 	};

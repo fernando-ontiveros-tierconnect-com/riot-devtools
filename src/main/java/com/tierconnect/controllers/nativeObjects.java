@@ -1,5 +1,8 @@
 package com.tierconnect.controllers;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
@@ -13,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Scanner;
@@ -82,7 +86,54 @@ public class nativeObjects implements controllerInterface
 	}
 
 	public void createThingTypes() {
-		cu.createThingTypeFromFile( "/nativeObjectsMultiple.txt" );
+		try {
+			cu.createThingTypeFromFile( "/nativeObjectsMultiple.txt" );
+		} catch (Exception e) {
+			System.out.println(e.getCause());
+		}
+
+		HashMap<String,Object> res;
+
+		try {
+			System.out.println( cu.ANSI_BLUE + "creating logical readers for tests" + cu.ANSI_BLACK);
+
+			String body = cu.read( "/coreServices/logicalReader.txt" );
+
+			JsonFactory factory = new JsonFactory();
+			ObjectMapper mapper = new ObjectMapper(factory);
+			TypeReference<HashMap<String,Object>> typeRef = new TypeReference<HashMap<String,Object>>() {};
+
+			res = mapper.readValue(body, typeRef);
+
+			ArrayList<HashMap<String, Object>> values = (ArrayList<HashMap<String, Object>>)res.get("values" );
+
+			for ( int i = 0; i < values.size(); i++ )
+			{
+				Map<String,Object> map =  values.get( i );
+				ObjectMapper mapper2 = new ObjectMapper();
+				String jsonFromMap = mapper.writeValueAsString(map);
+				System.out.println( "Got " + jsonFromMap );
+				cu.httpPutMessage( "logicalReader", jsonFromMap);
+			}
+
+			System.out.println( cu.ANSI_BLUE + "creating Shifts for tests" + cu.ANSI_BLACK);
+
+			body = cu.read( "/coreServices/shift.txt" );
+
+			res = mapper.readValue(body, typeRef);
+
+			values = (ArrayList<HashMap<String, Object>>)res.get("values" );
+
+			for ( int i = 0; i < values.size(); i++ )
+			{
+				Map<String,Object> map =  values.get( i );
+				String jsonFromMap = mapper.writeValueAsString(map);
+				System.out.println( "Got " + jsonFromMap );
+				cu.httpPutMessage( "shift", jsonFromMap);
+			}
+		} catch (Exception e) {
+			System.out.println(e.getCause());
+		}
 
 	}
 
@@ -295,6 +346,7 @@ public class nativeObjects implements controllerInterface
 
 		String topic = "/v1/data/ALEB/" + defaultRfidThingTypeCode;
 
+		sequenceNumber = cu.getSequenceNumber();
 		Long time = new Date().getTime();
 		sb.append( " sn," + sequenceNumber + "\n" );
 		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
@@ -364,7 +416,7 @@ public class nativeObjects implements controllerInterface
 		HashMap<String,Object> res;
 		try
 		{
-			res = cu.httpGetMessage( "logicalReader");
+			res = cu.httpGetMessage( "logicalReader?pageSize=100");
 
 			logicalReaders = (ArrayList<HashMap<String,Object>> )res.get("results");
 			//System.out.println( logicalReaders );
@@ -409,6 +461,7 @@ public class nativeObjects implements controllerInterface
 
 		String topic = "/v1/data/ALEB/" + defaultRfidThingTypeCode;
 
+		sequenceNumber = cu.getSequenceNumber();
 		Long time = new Date().getTime();
 		sb.append( " sn," + sequenceNumber + "\n" );
 		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
@@ -450,6 +503,7 @@ public class nativeObjects implements controllerInterface
 
 		String topic = "/v1/data/ALEB/" + multipleThingTypeCode;
 
+		sequenceNumber = cu.getSequenceNumber();
 		Long time = new Date().getTime();
 		sb.append( " sn," + sequenceNumber + "\n" );
 		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
@@ -564,6 +618,7 @@ public class nativeObjects implements controllerInterface
 
 		String topic = "/v1/data/ALEB/" + defaultRfidThingTypeCode;
 
+		sequenceNumber = cu.getSequenceNumber();
 		Long time = new Date().getTime();
 		sb.append( " sn," + sequenceNumber + "\n" );
 		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
@@ -604,6 +659,7 @@ public class nativeObjects implements controllerInterface
 
 		String topic = "/v1/data/ALEB/" + multipleThingTypeCode;
 
+		sequenceNumber = cu.getSequenceNumber();
 		Long time = new Date().getTime();
 		sb.append( " sn," + sequenceNumber + "\n" );
 		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
@@ -716,6 +772,7 @@ public class nativeObjects implements controllerInterface
 
 		String topic = "/v1/data/ALEB/" + defaultRfidThingTypeCode;
 
+		sequenceNumber = cu.getSequenceNumber();
 		Long time = new Date().getTime();
 		sb.append( " sn," + sequenceNumber + "\n" );
 		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
@@ -755,6 +812,7 @@ public class nativeObjects implements controllerInterface
 
 		String topic = "/v1/data/ALEB/" + multipleThingTypeCode;
 
+		sequenceNumber = cu.getSequenceNumber();
 		Long time = new Date().getTime();
 		sb.append( " sn," + sequenceNumber + "\n" );
 		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
@@ -832,7 +890,7 @@ public class nativeObjects implements controllerInterface
 			}
 		}
 
-		sb.append( " sn," + sequenceNumber + "\n" );
+		sequenceNumber = cu.getSequenceNumber();
 
 		Long time = new Date().getTime();
 		sb.append( " sn," + sequenceNumber + "\n" );

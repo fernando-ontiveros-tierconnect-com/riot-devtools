@@ -500,7 +500,28 @@ public class CommonUtils
 		}
 	}
 
-	private HashMap<String,Object> httpPutMessage(String url, String body) throws IOException, URISyntaxException
+	public Long getSequenceNumber()
+	{
+		Long sequenceNumber = 0L;
+
+		DBCollection devtoolConfig = db.getCollection( "devtoolsConfig" );
+
+		BasicDBObject query = new BasicDBObject( "_id", "sequenceNumber" );
+		BasicDBObject update = new BasicDBObject( "$inc", new BasicDBObject( "value", 1) );
+		DBObject res = devtoolConfig.findAndModify( query, update );
+		if (res == null) {
+			devtoolConfig.insert( new BasicDBObject("_id", "sequenceNumber").append( "value", 0 ) );
+			sequenceNumber = 1L;
+		}
+		else
+		{
+			sequenceNumber = Long.parseLong( res.get( "value" ).toString() );
+		}
+
+		return sequenceNumber;
+	}
+
+	public HashMap<String,Object> httpPutMessage(String url, String body) throws IOException, URISyntaxException
 	{
 		CloseableHttpClient httpclient = HttpClients.createDefault();
 

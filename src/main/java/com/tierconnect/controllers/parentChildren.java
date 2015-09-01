@@ -3,7 +3,6 @@ package com.tierconnect.controllers;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
@@ -30,18 +29,18 @@ import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Random;
 import java.util.Scanner;
 
 /**
  * Created by fernando on 7/17/15.
  */
-public class mapreduce implements controllerInterface
+public class parentChildren implements controllerInterface
 {
 	CommonUtils cu;
 	String lastSerialNumber = "000000000000000010000";
 	String lastQuantity = "10000";
+	String lastThingsPerMessage = "100";
 	Integer lastPosx = 0;
 	Integer lastPosy = 0;
 
@@ -49,6 +48,8 @@ public class mapreduce implements controllerInterface
 	Long serialNumber = 200L;
 	Long errores = 0L;
 	Long created = 0L;
+
+	Long thingsToChange = 1000L;
 
 	DBCollection thingsCollection;
 	DBCollection outputCollection;
@@ -67,7 +68,7 @@ public class mapreduce implements controllerInterface
 
 	public String getDescription() {
 
-		return "map reduce functions";
+		return "Parent-Children functions";
 	}
 
 	public void setup()
@@ -82,7 +83,7 @@ public class mapreduce implements controllerInterface
 
 	private String read( String fname ) throws IOException
 	{
-		InputStream is = mapreduce.class.getResourceAsStream( fname );
+		InputStream is = parentChildren.class.getResourceAsStream( fname );
 		InputStreamReader isr = new InputStreamReader( is );
 		BufferedReader br = new BufferedReader( isr );
 		StringBuffer sb = new StringBuffer();
@@ -307,51 +308,34 @@ public class mapreduce implements controllerInterface
 		String tag;
 		Integer delayBetweenThings = 1000;
 		StringBuffer sb = new StringBuffer();
-		Scanner in;
-		in = new Scanner(System.in);
 
-		System.out.print(cu.ANSI_BLACK + "\nenter the starting serialNumber[" + cu.ANSI_GREEN + lastSerialNumber + cu.ANSI_BLACK + "]:");
-		String tagIn = in.nextLine();
-		if (tagIn.equals("")) {
-			tagIn = lastSerialNumber;
-		} else {
-			tagIn = "000000000000000000000" + tagIn;
-		}
-		tag = tagIn.substring(tagIn.length()-21, tagIn.length());
-		lastSerialNumber = tag;
-		serialNumber = Long.parseLong( tag);
+		lastSerialNumber = "000000000000000000000" + cu.prompt( "enter Starting serialNumber", lastSerialNumber );
+
+		lastSerialNumber = lastSerialNumber.substring( lastSerialNumber.length() - 21, lastSerialNumber.length() );
+		serialNumber = Long.parseLong( lastSerialNumber);
 
 		//quantity
-		System.out.print(cu.ANSI_BLACK + "\nenter the quantity of things to create[" + cu.ANSI_GREEN + lastQuantity + cu.ANSI_BLACK + "]:");
-		tagIn = in.nextLine();
-		if (tagIn.equals("")) {
-			tagIn = lastQuantity;
-		} else {
-			tagIn = "0" + tagIn;
-		}
-		lastQuantity = tagIn;
+		lastQuantity = cu.prompt( "enter number of things to create", "" + lastQuantity );
 		Long quantity = Long.parseLong( lastQuantity);
 
-		System.out.print(cu.ANSI_BLACK + "\nHow many miliseconds (ms) between each blink ?[" + cu.ANSI_GREEN + delayBetweenThings + cu.ANSI_BLACK + "]:");
-		tagIn = in.nextLine();
-		if (tagIn.equals("")) {
-			//delayBetweenThings = delayBetweenThings;
-		} else {
-			delayBetweenThings = Integer.parseInt( tagIn );
-		}
+		//thingsPerMessage
+		lastThingsPerMessage = cu.prompt( "Things per Message", "" + lastThingsPerMessage );
+		Long thingsPerMessage = Long.parseLong( lastThingsPerMessage);
+
+		delayBetweenThings = Integer.parseInt( cu.prompt( "How many miliseconds (ms) between each blink ?", "" + delayBetweenThings ));
 
 		errores = 0L;
 		created = 0L;
 		TimerUtils tu = new TimerUtils();
 		tu.mark();
 
-		for (Long i=0L; i < quantity/3/100; i++) {
+		for (Long i=0L; i < quantity/3/thingsPerMessage; i++) {
 			//createOneThing();
-			createHundredThings(delayBetweenThings);
+			createHundredThings(delayBetweenThings, thingsPerMessage);
 			tu.mark();
-			System.out.println("      created:" + created + "  errores:" + errores + " time:" + tu.getLastDelt() + " ms.");
+			System.out.println("      created:" + created + " time:" + tu.getLastDelt() + " ms.");
 		}
-		System.out.println("TOTAL created:" + created + "  errores:" + errores + " time:" + tu.getTotalDelt() + " ms.");
+		System.out.println("TOTAL created:" + created + " time:" + tu.getTotalDelt() + " ms.");
 
 	}
 
@@ -396,7 +380,7 @@ public class mapreduce implements controllerInterface
 
 			//the parent thing : forklift
 			topic = "/v1/data/ALEB/forklift";
-			sequenceNumber++;
+			sequenceNumber = cu.getSequenceNumber();
 			serial1 = nextSerialNumber();
 			msg = " sn," + sequenceNumber + "\n";
 			msg += ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n";
@@ -410,7 +394,7 @@ public class mapreduce implements controllerInterface
 			//the first thing
 			topic = "/v1/data/ALEB/forkliftBattery";
 			serial2 = nextSerialNumber();
-			sequenceNumber++;
+			sequenceNumber = cu.getSequenceNumber();
 			posx = r.nextInt(499);
 			posy = r.nextInt(499);
 			lr = "LR" + r.nextInt(10);
@@ -427,7 +411,7 @@ public class mapreduce implements controllerInterface
 			//the third thing
 			topic = "/v1/data/ALEB/forkliftSolar";
 			serial3 = nextSerialNumber();
-			sequenceNumber++;
+			sequenceNumber = cu.getSequenceNumber();
 			msg = " sn," + sequenceNumber + "\n";
 			msg += serial3 + "," + time + ",location,-118.44395517462448;34.04811656588989;0.0\n";
 			msg += serial3 + "," + time + ",locationXYZ," + posx + ".0;" + posy + ".0;0.0\n";
@@ -499,7 +483,7 @@ public class mapreduce implements controllerInterface
 		}
 	}
 
-	public void createHundredThings(Integer delayBetweenThings)
+	public void createHundredThings(Integer delayBetweenThings, Long thingsPerMessage)
 	{
 		HashMap<String,Object> res;
 
@@ -510,15 +494,15 @@ public class mapreduce implements controllerInterface
 
 			Long time = new Date().getTime();
 			Integer i;
-			Long baseSerial;
 
-			baseSerial = serialNumber +1;
+			Long baseSerial = serialNumber +1;
+
 			//the parent thing : forklift
 			topic = "/v1/data/ALEB/forklift";
-			sequenceNumber++;
+			sequenceNumber = cu.getSequenceNumber();
 			msg = " sn," + sequenceNumber + "\n";
 			msg += ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n";
-			for (i=0; i<100; i++) {
+			for (i=0; i<thingsPerMessage; i++) {
 				serial1 = nextSerialNumber();
 
 				msg += serial1 + "," + time + ",lastDetectTime,1436985931348\n";
@@ -531,10 +515,10 @@ public class mapreduce implements controllerInterface
 
 			//the first thing
 			topic = "/v1/data/ALEB/forkliftBattery";
-			sequenceNumber++;
+			sequenceNumber = cu.getSequenceNumber();
 			msg = " sn," + sequenceNumber + "\n";
 			msg += ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n";
-			for (i=0; i<100; i++) {
+			for (i=0; i<thingsPerMessage; i++) {
 				serial2 = nextSerialNumber();
 				posx = r.nextInt(499);
 				posy = r.nextInt(499);
@@ -551,10 +535,10 @@ public class mapreduce implements controllerInterface
 
 			//the third thing
 			topic = "/v1/data/ALEB/forkliftSolar";
-			sequenceNumber++;
+			sequenceNumber = cu.getSequenceNumber();
 			msg = " sn," + sequenceNumber + "\n";
 			msg += ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n";
-			for (i=0; i<100; i++) {
+			for (i=0; i<thingsPerMessage; i++) {
 				serial3 = nextSerialNumber();
 				posx = r.nextInt(499);
 				posy = r.nextInt(499);
@@ -567,72 +551,76 @@ public class mapreduce implements controllerInterface
 			}
 			mq.publishSyncMessage(topic, msg);
 			cu.sleep(delayBetweenThings );
-			created += 100;
+			created += thingsPerMessage*3;
 
+			//update parent for forkliftBattery
 			String url;
+			for (i=0; i<thingsPerMessage; i++) {
+				try {
+					BasicDBObject query = new BasicDBObject( "serialNumber", castSerialNumber(baseSerial +  i) )
+							.append( "thingTypeCode", "forklift" );
+					DBObject p =  thingsCollection.findOne( query );
+					String parentId = p.get("_id").toString();
 
-			Boolean repeat;
-			Integer times;  //this is a patch, because the CoreBridge has an error
+					StringBuilder sb = new StringBuilder( "" );
+					sb.append( "{ \"serialNumber\": \"" + castSerialNumber( baseSerial + i) + "\", ");
+					sb.append( "\"thingTypeCode\": \"forklift\", " );
+					sb.append( "\"groupName\" : \"Santa Monica\", " );
+					sb.append( "\"name\" : \"" + castSerialNumber( baseSerial + i) +"\", " );
+					sb.append( "\"children\": [ " );
+					sb.append( "{" );
+					sb.append( "\"thingTypeCode\" : \"forkliftBattery\", ");
+					sb.append( "\"serialNumber\" : \"" + castSerialNumber( baseSerial + thingsPerMessage + i) + "\"" );
+					sb.append( " },");
+					sb.append( "{" );
+					sb.append( "\"thingTypeCode\" : \"forkliftSolar\", ");
+					sb.append( "\"serialNumber\" : \"" + castSerialNumber( baseSerial + 2*thingsPerMessage + i) + "\"" );
+					sb.append( " }");
+					sb.append( " ] } ");
 
-			for (i=0; i<100; i++) {
-				repeat = true;
-				times = 10;
-				while (repeat) {
-					try {
-						url = "http://localhost:8080/riot-core-services/api/thing/" + castSerialNumber(baseSerial + 100 + i) + "/setParent/" + castSerialNumber(baseSerial + i);
-						res = httpPostMessage(url, "");
-						if (res.get("modifiedTime") != null) {
-							repeat = false;
-							created ++;
-						} else {
-							System.out.println("retry # " + (10 - times) + " en endpoint para serial: " + castSerialNumber(baseSerial + 100 + i));
-							times--; //retry only 10 times, and then continue
-							cu.sleep(1 + (10 - times) * delayBetweenThings/10);
-							if (times <= 0) {
-								repeat = false;
-								errores ++;
-								System.out.println("ERROR       en endpoint para serial: " + castSerialNumber(baseSerial + 100 + i));
-								System.out.println("total created:" + created + "  errores:" + errores);
-							}
-						}
-					} catch (Exception e) {
-						System.out.println(e.getCause());
-					}
-				}
+					url = "http://localhost:8080/riot-core-services/api/thing/" + parentId;
+					res = httpPatchMessage( url, sb.toString() );
+					System.out.print( res );
 
-				repeat = true;
-				times = 10;
-				while (repeat) {
-					try {
-						url = "http://localhost:8080/riot-core-services/api/thing/" + castSerialNumber(baseSerial + 200 +i) + "/setParent/" + castSerialNumber(baseSerial + i);
-						res = httpPostMessage(url, "");
-						cu.sleep(1 + (10 - times) * delayBetweenThings/10);
-						if (res.get("modifiedTime") != null) {
-							repeat = false;
-							created ++;
-						} else {
-							System.out.println("retry # " + (10 - times) + " en endpoint para serial: " + castSerialNumber(baseSerial + 200 + i));
-							times--; //retry only 10 times, and then continue
-							if (times <= 0) {
-								repeat = false;
-								errores ++;
-								System.out.println("ERROR       en endpoint para serial: " + castSerialNumber(baseSerial + 200 + i));
-
-								System.out.println("total created:" + created + "  errores:" + errores);
-							}
-						}
-					} catch (Exception e) {
-						System.out.println(e.getCause());
-					}
+				} catch (Exception e) {
+					System.out.println(e.getCause());
 				}
 			}
+/*
+			//update parent for forkliftSolar
+			for (i=0; i<thingsPerMessage; i++) {
+				try {
+					BasicDBObject query = new BasicDBObject( "serialNumber", castSerialNumber(baseSerial +  i) )
+							.append( "thingTypeCode", "forklift" );
+					DBObject p =  thingsCollection.findOne( query );
+					String parentId = p.get("_id").toString();
+
+					StringBuilder sb = new StringBuilder( "" );
+					sb.append( "{ \"serialNumber\": \"" + castSerialNumber( baseSerial + i) + "\", ");
+					sb.append( "\"thingTypeCode\": \"forklift\", " );
+					sb.append( "\"groupName\" : \"Santa Monica\", " );
+					sb.append( "\"name\" : \"" + castSerialNumber( baseSerial + i) +"\", " );
+					sb.append( "\"children\": [ {" );
+					sb.append( "\"thingTypeCode\" : \"forkliftBattery\", ");
+					sb.append( "\"serialNumber\" : \"" + castSerialNumber( baseSerial + thingsPerMessage + i) + "\"" );
+					sb.append( " } ] } ");
+
+					url = "http://localhost:8080/riot-core-services/api/thing/" + parentId;
+					res = httpPatchMessage( url, sb.toString() );
+					System.out.print( res );
+				} catch (Exception e) {
+					System.out.println(e.getCause());
+				}
+			}
+*/
 		} catch (Exception e) {
 			System.out.println(e.getCause());
 		}
 	}
 
-	private void sendChangeMessage( Integer sequenceNumber, String serialNumber, String thingType, Integer delayBetweenThings)
+	private void sendChangeMessage( String serialNumber, String thingType, Integer delayBetweenThings)
 	{
+		sequenceNumber = cu.getSequenceNumber();
 
 		String topic = "/v1/data/ALEB/" + thingType;
 		StringBuffer msg = new StringBuffer();
@@ -665,25 +653,11 @@ public class mapreduce implements controllerInterface
 		StringBuffer sb = new StringBuffer();
 		Scanner in;
 		in = new Scanner(System.in);
-		Long thingsToChange = 0L;
 		Integer delayBetweenThings = 10;
 
-		System.out.print(cu.ANSI_BLACK + "\nHow many things wants to change?[" + cu.ANSI_GREEN + "1000" + cu.ANSI_BLACK + "]:");
-		String tagIn = in.nextLine();
-		if (tagIn.equals("")) {
-			tagIn = "1000";
-		} else {
-			tagIn = "" + Long.parseLong(tagIn);
-		}
-		thingsToChange = Long.parseLong(tagIn);
+		thingsToChange = Long.parseLong( cu.prompt( "How many things wants to change?", "" + thingsToChange ) );
 
-		System.out.print(cu.ANSI_BLACK + "\nHow many miliseconds (ms) between each blink ?[" + cu.ANSI_GREEN + delayBetweenThings + cu.ANSI_BLACK + "]:");
-		tagIn = in.nextLine();
-		if (tagIn.equals("")) {
-			//delayBetweenThings = delayBetweenThings;
-		} else {
-			delayBetweenThings = Integer.parseInt( tagIn );
-		}
+		delayBetweenThings = Integer.parseInt( cu.prompt( "How many ms beetween each blink?", "" + delayBetweenThings ) );
 
 		System.out.print(cu.ANSI_BLACK + "\nChanging " + thingsToChange + " things with a delay of " + delayBetweenThings + " ms.");
 
@@ -718,11 +692,14 @@ public class mapreduce implements controllerInterface
 					cursor.next();
 					serialNumber = cursor.curr().get("serialNumber").toString();
 					thingType    = cursor.curr().get("thingTypeCode").toString();
-					if ( allThings || thingType.equals( "forkliftBattery") || thingType.equals( "forkliftSolar") )
+					if ( thingType.equals( "forklift") || thingType.equals( "forkliftBattery") || thingType.equals( "forkliftSolar") )
 					{
-						System.out.println( i + " " + serialNumber + " " + thingType );
-						sendChangeMessage( i, serialNumber, thingType, delayBetweenThings );
-						i ++;
+						if ( allThings || thingType.equals( "forkliftBattery") || thingType.equals( "forkliftSolar") )
+						{
+							System.out.println( i + " " + serialNumber + " " + thingType );
+							sendChangeMessage(serialNumber, thingType, delayBetweenThings );
+							i++;
+						}
 					}
 				}
 			} finally {
@@ -774,214 +751,19 @@ public class mapreduce implements controllerInterface
 			return;
 		}
 
-		sendChangeMessage( 1, serialNumber, thingType, 0 );
+		sendChangeMessage( serialNumber, thingType, 0 );
 
 	}
-
-	private void sendCommasBlink() {
-		StringBuffer sb = new StringBuffer();
-
-		Random r = new Random();
-		String serialNumber = "";
-
-		serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber",lastSerialNumber );
-		lastSerialNumber = serialNumber.substring(serialNumber.length()-21, serialNumber.length());
-		serialNumber = lastSerialNumber;
-
-		thingTypeCode = cu.prompt( "enter the thingTypeCode",thingTypeCode );
-
-		thingField = cu.prompt( "enter the udf name",thingField );
-
-		String fruits[] = {"apples", "oranges", "bananas", "grapes", "strawberries", "watermelon", "pineapples"};
-		String commaValue = "";
-		for (int i = 0; i < r.nextInt( 2 )+2; i++) {
-			commaValue += (commaValue.equals( "" ) ? "" : ", " ) + (r.nextInt( 10 ) + 1) + " " + fruits[ r.nextInt( fruits.length -1)];
-		}
-
-		String topic = "/v1/data/ALEB/" + thingTypeCode;
-
-		Long time = new Date().getTime();
-		sb.append( " sn," + sequenceNumber + "\n" );
-		sb.append(",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n");
-
-		sb.append(serialNumber + "," + time + "," + thingField + "," + "\"" + commaValue + "\"\n");
-
-
-		System.out.println(" serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "");
-		System.out.println("thingTypeCode: " + cu.ANSI_BLUE + thingTypeCode + cu.ANSI_BLACK + "");
-		System.out.println("        field: " + cu.ANSI_BLUE + thingField + cu.ANSI_BLACK + "");
-		System.out.println("        value: " + cu.ANSI_BLUE + commaValue + cu.ANSI_BLACK + "");
-
-		DBObject prevThing = cu.getThing( serialNumber );
-
-		mq.publishSyncMessage(topic, sb.toString());
-		cu.sleep( 1000 );
-
-		DBObject newThing = cu.getThing( serialNumber );
-		cu.diffThings( newThing, prevThing );
-	}
-
-	private void sendJSONBlink() {
-		StringBuffer sb = new StringBuffer();
-
-		Random r = new Random();
-		String serialNumber = "";
-
-		serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber",lastSerialNumber );
-		lastSerialNumber = serialNumber.substring(serialNumber.length()-21, serialNumber.length());
-		serialNumber = lastSerialNumber;
-
-		thingTypeCode = cu.prompt( "enter the thingTypeCode",thingTypeCode );
-
-		thingFieldJSON = cu.prompt( "enter the udf name",thingFieldJSON );
-
-		String fruits[] = {"apples", "oranges", "bananas", "grapes", "strawberries", "watermelon", "pineapples"};
-		String commaValue = "";
-		for (int i = 0; i < r.nextInt( 2 )+2; i++) {
-			commaValue += (commaValue.equals( "" ) ? "" : ", " ) + (r.nextInt( 10 ) + 1) + " " + fruits[ r.nextInt( fruits.length -1)];
-		}
-
-		String topic = "/v1/data/ALEB/" + thingTypeCode;
-
-		StringBuffer sbjs = new StringBuffer(  );
-
-		String ISOTime = "2015-08-21T12:22:22Z";
-
-		sbjs.append( "[" );
-		sbjs.append( "{" );
-		sbjs.append( "\"id\":29," );
-		sbjs.append( "\"name\":\"SHIFT 1\"," );
-		sbjs.append( "\"active\":true," );
-		sbjs.append( "\"daysofweek\":\"23456\"," );
-		sbjs.append( "\"time\":\"" + ISOTime + "\"," );
-		sbjs.append( "\"fruits\":\"" + commaValue + "\"" );
-		sbjs.append( "}" );
-		sbjs.append( "{" );
-		sbjs.append( "\"id\":29," );
-		sbjs.append( "\"name\":\"SHIFT 2\"," );
-		sbjs.append( "\"active\":false," );
-		sbjs.append( "\"daysofweek\":\"17\"," );
-		sbjs.append( "\"time\":\"" + ISOTime + "\"" );
-		sbjs.append( "}" );
-		sbjs.append( "]" );
-
-		StringBuilder jsonStr = new StringBuilder(  );
-		for (int i = 0; i < sbjs.toString().length(); i++ )
-		{
-			char car = sbjs.toString().charAt( i );
-			if ('"' == car)
-			{
-				jsonStr.append( '\\' );
-				jsonStr.append( '"' );
-			} else {
-				jsonStr.append( car );
-			}
-		}
-
-		sb.append( " sn," + sequenceNumber + "\n" );
-
-		Long time = new Date().getTime();
-		sb.append( " sn," + sequenceNumber + "\n" );
-		sb.append(",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n");
-
-		sb.append(serialNumber + "," + time + "," + thingFieldJSON + "," + "\"" + jsonStr.toString() + "\"\n");
-
-
-		System.out.println(" serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "");
-		System.out.println("thingTypeCode: " + cu.ANSI_BLUE + thingTypeCode + cu.ANSI_BLACK + "");
-		System.out.println("        field: " + cu.ANSI_BLUE + thingFieldJSON + cu.ANSI_BLACK + "");
-		System.out.println("        value: " + cu.ANSI_BLUE + jsonStr.toString() + cu.ANSI_BLACK + "");
-
-		DBObject prevThing = cu.getThing( serialNumber );
-
-		mq.publishSyncMessage(topic, sb.toString());
-		cu.sleep( 1000 );
-
-		DBObject newThing = cu.getThing( serialNumber );
-		cu.diffThings( newThing, prevThing );
-	}
-
-
-
-	public void incrementalMR()
-	{
-		DBCursor cursor;
-		DBCollection mrlogsCollection = cu.db.getCollection("mrlogs");
-		BasicDBList inList = new BasicDBList();
-		BasicDBList inTypes = new BasicDBList();
-		inTypes.add("forklift");
-		inTypes.add("forkliftBattery");
-		inTypes.add("forkliftSolar");
-		try {
-			DBObject filterById = new BasicDBObject("_id", new BasicDBObject("$in", inTypes));
-			cursor = mrlogsCollection.find(filterById);
-			try {
-				while (cursor.hasNext()) {
-					cursor.next();
-					BasicDBList childrenList = (BasicDBList) cursor.curr().get("children");
-					Iterator<Object> it = childrenList.iterator();
-					while (it.hasNext()) {
-						inList.add(it.next());
-					}
-					DBObject rmQuery = new BasicDBObject("_id", new BasicDBObject("$in", inTypes));
-					mrlogsCollection.findAndRemove(rmQuery);
-				}
-			} finally {
-				cursor.close();
-			}
-
-			System.out.println("there are " + inList.size() + " thing Ids in the log");
-
-			TimerUtils tu = new TimerUtils();
-			tu.mark();
-			String childrenMap = read( "/childrenMap.txt" );
-			String childrenReduce = read( "/childrenReduce.txt" );
-
-			DBObject query = new BasicDBObject( "_id", new BasicDBObject("$in", inList));
-
-			MapReduceCommand cmd = new MapReduceCommand(
-					thingsCollection,
-					childrenMap,
-					childrenReduce,
-					"mr_forklift",
-					MapReduceCommand.OutputType.REDUCE,
-					query
-			);
-
-			MapReduceOutput out = thingsCollection.mapReduce(cmd);
-
-			tu.mark();
-
-			System.out.println("Input  rows: " + out.getInputCount() );
-			System.out.println("Emit   rows: " + out.getEmitCount() );
-			System.out.println("Output rows: " + out.getOutputCount() );
-
-			//for (DBObject o : out.results()) {
-			//	System.out.println(o.toString());
-			//}
-
-			//timer
-			System.out.println("map reduced in " + tu.getLastDelt() + " ms ");
-		} catch (IOException e) {
-			System.out.println(e.getCause());
-		}
-	}
-
 
 	public void execute() {
 		setup();
 		HashMap<String, String> options = new HashMap<String,String>();
 
-		options.put("1", "create Thing Types for Parent-Child test");
-		options.put("2", "create 100k things for Parent-Child test");
-		options.put("3", "execute MR for Parent-Children");
-		options.put("4", "change 1000 things ");
-		options.put("5", "change 1000 child things only");
-		options.put("6", "change 1 things");
-		options.put("7", "execute incremental MR");
-		options.put("8", "send a CSV (comma separate values) to udf");
-		options.put("9", "send a JSON to udf");
-		//options.put("4", "delete things and thingtypes");
+		options.put("1", "create ThingTypes ");
+		options.put("2", "create Parent-Child things");
+		options.put("3", "change things ");
+		options.put("4", "change child things only");
+		options.put("5", "change 1 things");
 
 		Integer option = 0;
 		while (option != null) {
@@ -994,26 +776,13 @@ public class mapreduce implements controllerInterface
 					createThings();
 				}
 				if (option == 2) {
-					executeMR();
-				}
-				if (option == 3) {
 					changeThings(true);
 				}
-				if (option == 4) {
+				if (option == 3) {
 					changeThings(false);
 				}
-				if (option == 5) {
+				if (option == 4) {
 					changeOneThing();
-				}
-				if (option == 6) {
-					incrementalMR();
-				}
-				if (option == 7) {
-					sendCommasBlink();
-				}
-
-				if (option == 8) {
-					sendJSONBlink();
 				}
 
 				System.out.println(cu.ANSI_BLACK +  "\npress [enter] to continue");

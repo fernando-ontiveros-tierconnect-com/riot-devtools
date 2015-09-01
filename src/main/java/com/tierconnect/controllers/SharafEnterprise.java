@@ -211,7 +211,7 @@ public class SharafEnterprise implements controllerInterface
 
 			//the parent thing : forklift
 			topic = "/v1/data/ALEB/sharafRFID";
-			sequenceNumber = getSequenceNumber();
+			sequenceNumber = cu.getSequenceNumber();
 			msg.append( " sn," + sequenceNumber + "\n" );
 			msg.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n");
 
@@ -403,7 +403,7 @@ public class SharafEnterprise implements controllerInterface
 						i ++;
 						if (i % thingsPerBlink == 0)
 						{
-							sequenceNumber = getSequenceNumber();
+							sequenceNumber = cu.getSequenceNumber();
 							sendChangeMessage( sequenceNumber, serials, thingType, delayBetweenThings );
 							System.out.println( "sn:" + sequenceNumber + " " + i + " thing updates" );
 							serials.clear();
@@ -419,26 +419,6 @@ public class SharafEnterprise implements controllerInterface
 
 	}
 
-	public Long getSequenceNumber()
-	{
-		Long sequenceNumber = 0L;
-
-		DBCollection devtoolConfig = cu.db.getCollection( "devtoolsConfig" );
-
-		BasicDBObject query = new BasicDBObject( "_id", "sequenceNumber" );
-		BasicDBObject update = new BasicDBObject( "$inc", new BasicDBObject( "value", 1) );
-		DBObject res = devtoolConfig.findAndModify( query, update );
-		if (res == null) {
-			devtoolConfig.insert( new BasicDBObject("_id", "sequenceNumber").append( "value", 0 ) );
-			sequenceNumber = 1L;
-		}
-		else
-		{
-			sequenceNumber = Long.parseLong( res.get( "value" ).toString() );
-		}
-
-		return sequenceNumber;
-	}
 
 	public void execute() {
 		setup();
