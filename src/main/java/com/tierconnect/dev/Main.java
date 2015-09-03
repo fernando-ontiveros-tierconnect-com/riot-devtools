@@ -176,6 +176,8 @@ public class Main {
 
 		Integer option = 0;
 		while (option != null) {
+			cu.simpleStats();
+			cu.simpleStatsByCollection();
 			option = showMenu();
 			if (option != null) {
 				controllers.get(option).execute();

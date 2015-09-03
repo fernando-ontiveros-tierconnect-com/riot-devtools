@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.BasicDBObject;
+import com.mongodb.CommandResult;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBCursor;
@@ -36,6 +37,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Scanner;
@@ -611,4 +613,155 @@ public class CommonUtils
 
 	}
 
+	private HashMap<String, DBObject> getThingsPerThingType()
+	{
+		List<DBObject> pipeline = new ArrayList<>(  );
+		BasicDBObject match;
+
+		BasicDBObject group = new BasicDBObject( "_id", "$thingTypeCode" )
+				.append( "count", new BasicDBObject( "$sum", 1 ) )
+				.append( "max", new BasicDBObject( "$max", "$serialNumber" ) )
+				.append( "min", new BasicDBObject( "$min", "$serialNumber" ) );
+		pipeline.add( new BasicDBObject( "$group", group ));
+
+		Iterator<DBObject> results = thingsCollection.aggregate( pipeline ).results().iterator();
+		HashMap<String, DBObject> map = new HashMap<>(  );
+		while (results.hasNext()) {
+			DBObject res = results.next();
+			map.put( res.get("_id").toString(), res);
+			DBObject type = map.get( res.get("_id"));
+			type.put( "parent", 0);
+			type.put( "children", 0);
+		}
+
+		//count how many children
+		pipeline = new ArrayList<>(  );
+
+		match = new BasicDBObject( "children", new BasicDBObject( "$ne", null ) );
+		pipeline.add( new BasicDBObject( "$match", match ));
+		pipeline.add( new BasicDBObject( "$group", group ));
+
+		results = thingsCollection.aggregate( pipeline ).results().iterator();
+		while (results.hasNext()) {
+			DBObject res = results.next();
+			DBObject type = map.get( res.get("_id"));
+			type.put( "children", res.get( "count" ));
+		}
+
+		//count how many parents
+		pipeline = new ArrayList<>(  );
+
+		match = new BasicDBObject( "parent.id", new BasicDBObject( "$ne", null ) );
+		pipeline.add( new BasicDBObject( "$match", match ));
+		pipeline.add( new BasicDBObject( "$group", group ));
+
+		results = thingsCollection.aggregate( pipeline ).results().iterator();
+		while (results.hasNext()) {
+			DBObject res = results.next();
+			DBObject type = map.get( res.get("_id"));
+			type.put( "parent", res.get("count"));
+		}
+
+		return map;
+
+	}
+
+	public String alignRight (String s, int n)
+	{
+		return alignRight( s,n, ' ' );
+	}
+
+	public String alignLeft (String s, int n)
+	{
+		return alignLeft( s, n, ' ' );
+	}
+
+	private String alignRight (String s, int n, char c)
+	{
+		String space = "";
+		for (int i = 0; i<n; i++) {
+			space += c;
+		}
+		s = space + s;
+		int len = s.length();
+		return s.substring( len -n, len );
+	}
+
+	private String alignLeft (String s, int n, char c)
+	{
+		String space = s;
+		for (int i = 0; i<n; i++) {
+			space += c;
+		}
+		int len = space.length();
+		return space.substring( 0, n );
+	}
+
+	public void simpleStats ()
+	{
+		HashMap<String, DBObject> map = getThingsPerThingType();
+
+		System.out.println ("+----------------------+----------+----------+----------+---------------------+");
+		System.out.println ("|ThingTypeCode         |  count   | parents  | children |         max         |");
+		System.out.println ("|----------------------+----------+----------+----------+---------------------|");
+		Iterator it = map.keySet().iterator();
+		while (it.hasNext()) {
+			DBObject row = map.get (it.next());
+			System.out.print( "|" + alignLeft( row.get( "_id" ).toString(), 22, ' ') );
+			System.out.print( "|" + alignRight( row.get("count").toString(), 9, ' ' ) + " ");
+			System.out.print( "|" + alignRight( row.get("parent").toString(), 9, ' ' ) + " ");
+			System.out.print( "|" + alignRight( row.get("children").toString(), 9, ' ' ) + " ");
+			System.out.print( "|" + alignRight( row.get("max").toString(), 21, ' ' ) + "");
+			System.out.println("|");
+		}
+		System.out.println ("+----------------------+----------+---------------------+---------------------+");
+	}
+
+	public void simpleStatsByCollection ()
+	{
+		HashMap<String, DBObject> map = getThingsPerThingType();
+
+		CommandResult re;
+		String strSize;
+		String strIndex;
+
+		thingsCollection.count();
+		DBCollection thingSnapshots = db.getCollection( "thingSnapshots");
+		DBCollection thingSnapshotIds = db.getCollection( "thingSnapshotIds");
+
+		System.out.println ("+-------------------+----------+------------+------------+");
+
+		System.out.print( "|            things ");
+		re = thingsCollection.getStats();
+		strSize = alignRight( "" + (long)(Double.valueOf( re.get( "size" ).toString() ) / 1024 / 1024), 8, ' ' );
+		strIndex = alignRight( "" + (long)(Double.valueOf( re.get( "totalIndexSize" ).toString() ) / 1024 / 1024), 8, ' ' );
+		System.out.println( "|" + alignRight( thingsCollection.count() + "", 10, ' ' ) + "|" + strSize + " Mb.|" + strIndex + " Mb.|" );
+
+		re = thingSnapshots.getStats();
+		if (re.get("size") != null )
+		{
+			System.out.print( "|    thingSnapshots " );
+			strSize  = alignRight( "" + (long)(Double.valueOf( re.get( "size" ).toString() ) / 1024 / 1024), 8, ' ' );
+			strIndex = alignRight( "" + (long)(Double.valueOf( re.get( "totalIndexSize" ).toString() ) / 1024 / 1024), 8, ' ' );
+
+			System.out.println( "|" + alignRight( thingSnapshots.count() + "", 10, ' ' ) + "|" + strSize + " Mb.|" + strIndex + " Mb.|" );
+		}
+
+		re = thingSnapshotIds.getStats();
+		if (re.get("size") != null )
+		{
+			System.out.print( "|  thingSnapshotIds ");
+			strSize = alignRight( "" + (long)(Double.valueOf( re.get( "size" ).toString() ) / 1024 / 1024), 8, ' ' );
+			strIndex = alignRight( "" + (long)(Double.valueOf( re.get( "totalIndexSize" ).toString() ) / 1024 / 1024), 8, ' ' );
+			System.out.println( "|" + alignRight( thingSnapshotIds.count() + "", 10, ' ' ) + "|" + strSize + " Mb.|" + strIndex + " Mb.|" );
+		}
+		System.out.println ("+-------------------+----------+------------+------------+");
+
+
+
+		re = db.getStats();
+		for(String k: re.keySet()){
+			//System.out.println(k+"="+re.get(k) );
+		}
+	}
 }

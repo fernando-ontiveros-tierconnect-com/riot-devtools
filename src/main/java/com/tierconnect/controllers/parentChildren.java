@@ -27,8 +27,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -49,7 +52,7 @@ public class parentChildren implements controllerInterface
 	Long errores = 0L;
 	Long created = 0L;
 
-	Long thingsToChange = 1000L;
+	Long thingsToChange = 40000L;
 
 	DBCollection thingsCollection;
 	DBCollection outputCollection;
@@ -308,6 +311,13 @@ public class parentChildren implements controllerInterface
 		String tag;
 		Integer delayBetweenThings = 1000;
 		StringBuffer sb = new StringBuffer();
+		HashMap<String, DBObject> stats = getThingsPerThingType();
+		if (stats.get("forklift") == null) {
+			lastSerialNumber = "1";
+		} else
+		{
+			lastSerialNumber = (Long.parseLong( stats.get( "forklift" ).get( "max" ).toString()) + 1) + "";
+		}
 
 		lastSerialNumber = "000000000000000000000" + cu.prompt( "enter Starting serialNumber", lastSerialNumber );
 
@@ -322,16 +332,15 @@ public class parentChildren implements controllerInterface
 		lastThingsPerMessage = cu.prompt( "Things per Message", "" + lastThingsPerMessage );
 		Long thingsPerMessage = Long.parseLong( lastThingsPerMessage);
 
-		delayBetweenThings = Integer.parseInt( cu.prompt( "How many miliseconds (ms) between each blink ?", "" + delayBetweenThings ));
-
+		//delayBetweenThings = Integer.parseInt( cu.prompt( "How many miliseconds (ms) between each blink ?", "" + delayBetweenThings ));
+		delayBetweenThings = 1500;
 		errores = 0L;
 		created = 0L;
 		TimerUtils tu = new TimerUtils();
 		tu.mark();
 
 		for (Long i=0L; i < quantity/3/thingsPerMessage; i++) {
-			//createOneThing();
-			createHundredThings(delayBetweenThings, thingsPerMessage);
+			createParentChildThings( delayBetweenThings, thingsPerMessage );
 			tu.mark();
 			System.out.println("      created:" + created + " time:" + tu.getLastDelt() + " ms.");
 		}
@@ -367,123 +376,55 @@ public class parentChildren implements controllerInterface
 		return "" + r / 100.0;
 	}
 
-	public void createOneThing()
+	private HashMap<String, DBObject>  getThingsPerThingType()
 	{
-		HashMap<String,Object> res;
+		List<DBObject> pipeline = new ArrayList<>(  );
 
-		try {
-			String topic, msg, serial1, serial2, serial3, lr;
-			Integer posx, posy;
-			Random r = new Random();
+		BasicDBObject group = new BasicDBObject( "_id", "$thingTypeCode" )
+				.append( "count", new BasicDBObject( "$sum", 1 ) )
+				.append( "max", new BasicDBObject( "$max", "$serialNumber" ) )
+				.append( "min", new BasicDBObject( "$min", "$serialNumber" ) );
+		pipeline.add( new BasicDBObject( "$group", group ));
 
-			Long time = new Date().getTime();
-
-			//the parent thing : forklift
-			topic = "/v1/data/ALEB/forklift";
-			sequenceNumber = cu.getSequenceNumber();
-			serial1 = nextSerialNumber();
-			msg = " sn," + sequenceNumber + "\n";
-			msg += ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n";
-			msg += serial1 + "," + time + ",lastDetectTime,1436985931348\n";
-			msg += serial1 + "," + time + ",brand,"  + getRandomBrand()+ "\n";
-			msg += serial1 + "," + time + ",status," + getRandomStatus()+ "\n";
-			msg += serial1 + "," + time + ",usage,"  + getRandomUsage()+ "\n";
-			mq.publishSyncMessage(topic, msg);
-			//cu.sleep(10 );
-
-			//the first thing
-			topic = "/v1/data/ALEB/forkliftBattery";
-			serial2 = nextSerialNumber();
-			sequenceNumber = cu.getSequenceNumber();
-			posx = r.nextInt(499);
-			posy = r.nextInt(499);
-			lr = "LR" + r.nextInt(10);
-
-			msg = " sn," + sequenceNumber + "\n";
-			msg += serial2 + "," + time + ",location,-118.44395517462448;34.04811656588989;0.0\n";
-			msg += serial2 + "," + time + ",locationXYZ," + posx + ".0;" + posy + ".0;0.0\n";
-			msg += serial2 + "," + time + ",logicalReader," + lr + "\n";
-			msg += serial2 + "," + time + ",lastLocateTime,1436985931348\n";
-			msg += serial2 + "," + time + ",lastDetectTime,1436985931348\n";
-			mq.publishSyncMessage(topic, msg);
-			//cu.sleep(10 );
-
-			//the third thing
-			topic = "/v1/data/ALEB/forkliftSolar";
-			serial3 = nextSerialNumber();
-			sequenceNumber = cu.getSequenceNumber();
-			msg = " sn," + sequenceNumber + "\n";
-			msg += serial3 + "," + time + ",location,-118.44395517462448;34.04811656588989;0.0\n";
-			msg += serial3 + "," + time + ",locationXYZ," + posx + ".0;" + posy + ".0;0.0\n";
-			msg += serial3 + "," + time + ",logicalReader," + lr + "\n";
-			msg += serial3 + "," + time + ",lastLocateTime,1436985931348\n";
-			msg += serial3 + "," + time + ",lastDetectTime,1436985931348\n";
-//			msg += serial3 + ",1436985931348,status,status" + r.nextInt(10)+ "\n";
-			mq.publishSyncMessage(topic, msg);
-			cu.sleep(1 );
-
-			String url;
-
-			Boolean repeat;
-			Integer times;  //this is a patch, because the CoreBridge has an error
-
-			repeat = true;
-			times = 10;
-			while (repeat) {
-				try {
-					cu.sleep(1+(10-times)*25 );
-					url = "http://localhost:8080/riot-core-services/api/thing/" + serial2 + "/setParent/" + serial1;
-					res = httpPostMessage(url, "");
-					if (res.get("modifiedTime") != null) {
-						repeat = false;
-					}
-					times --; //retry only 10 times, and then continue
-					if (times <= 0) {
-						repeat = false;
-					}
-				} catch (Exception e) {
-					System.out.println(e.getCause());
-				}
-			}
-
-			repeat = true;
-			times = 10;
-			while (repeat) {
-				try {
-					url = "http://localhost:8080/riot-core-services/api/thing/" + serial3 + "/setParent/" + serial1;
-					res = httpPostMessage(url, "");
-					cu.sleep(1+(10-times)*10 );
-					if (res.get("modifiedTime") != null) {
-						repeat = false;
-					}
-					times --; //retry only 10 times, and then continue
-					if (times <= 0) {
-						repeat = false;
-					}
-				} catch (Exception e) {
-					System.out.println(e.getCause());
-				}
-			}
-/*
-		Integer parentId = 57;
-		Integer childrenId = 58;
-
-		msg = "{\"group.id\":3,\"parent.id\":" +
-				parentId + ",\"name\":\"" +
-				serial + "\",\"serial\":\"" +
-				serial + "\"}";
-
-		httpPatchMessage("http://localhost:8080/riot-core-services/api/thing/" + childrenId, msg);
-
-		childrenId = 59;
-		httpPatchMessage("http://localhost:8080/riot-core-services/api/thing/" + childrenId, msg);
-*/
-		} catch (Exception e) {
-			System.out.println(e.getCause());
+		Iterator<DBObject> results = thingsCollection.aggregate( pipeline ).results().iterator();
+		HashMap<String, DBObject> map = new HashMap<>(  );
+		while (results.hasNext()) {
+			DBObject res = results.next();
+			map.put( res.get("_id").toString(), res);
 		}
+		//System.out.println(map);
+
+		return map;
+
 	}
 
-	public void createHundredThings(Integer delayBetweenThings, Long thingsPerMessage)
+	private Long getIdFromThing(String thingTypeCode, String serialNumber)
+	{
+		int times = 30;
+
+		do
+		{
+			BasicDBObject query = new BasicDBObject( "serialNumber", serialNumber ).append( "thingTypeCode", thingTypeCode );
+			DBObject p = thingsCollection.findOne( query );
+			if( p == null )
+			{
+				System.out.print( "." );
+				cu.sleep( times*100 );
+				times--;
+				if (times < 0) {
+					return null;
+				}
+			}
+			else
+			{
+				System.out.println("    " + p.get("_id").toString() + " = " + serialNumber + " " + thingTypeCode );
+				return Long.valueOf( p.get( "_id" ).toString() );
+			}
+		} while (times >= 0);
+		return null;
+	}
+
+	public void createParentChildThings(Integer delayBetweenThings, Long thingsPerMessage)
 	{
 		HashMap<String,Object> res;
 
@@ -495,9 +436,11 @@ public class parentChildren implements controllerInterface
 			Long time = new Date().getTime();
 			Integer i;
 
-			Long baseSerial = serialNumber +1;
+			Long baseSerial = serialNumber;
+
 
 			//the parent thing : forklift
+			serialNumber = baseSerial - 1;
 			topic = "/v1/data/ALEB/forklift";
 			sequenceNumber = cu.getSequenceNumber();
 			msg = " sn," + sequenceNumber + "\n";
@@ -511,9 +454,10 @@ public class parentChildren implements controllerInterface
 				msg += serial1 + "," + time + ",usage," + getRandomUsage() + "\n";
 			}
 			mq.publishSyncMessage(topic, msg);
-			//cu.sleep(10 );
+			cu.sleep(100 );
 
 			//the first thing
+			serialNumber = baseSerial - 1;
 			topic = "/v1/data/ALEB/forkliftBattery";
 			sequenceNumber = cu.getSequenceNumber();
 			msg = " sn," + sequenceNumber + "\n";
@@ -531,9 +475,10 @@ public class parentChildren implements controllerInterface
 				msg += serial2 + "," + time + ",lastDetectTime,1436985931348\n";
 			}
 			mq.publishSyncMessage(topic, msg);
-			//cu.sleep(10 );
+			cu.sleep(100 );
 
 			//the third thing
+			serialNumber = baseSerial - 1;
 			topic = "/v1/data/ALEB/forkliftSolar";
 			sequenceNumber = cu.getSequenceNumber();
 			msg = " sn," + sequenceNumber + "\n";
@@ -550,17 +495,18 @@ public class parentChildren implements controllerInterface
 				msg += serial3 + "," + time + ",lastDetectTime,1436985931348\n";
 			}
 			mq.publishSyncMessage(topic, msg);
-			cu.sleep(delayBetweenThings );
+			cu.sleep(100);
+
 			created += thingsPerMessage*3;
 
 			//update parent for forkliftBattery
 			String url;
 			for (i=0; i<thingsPerMessage; i++) {
 				try {
-					BasicDBObject query = new BasicDBObject( "serialNumber", castSerialNumber(baseSerial +  i) )
-							.append( "thingTypeCode", "forklift" );
-					DBObject p =  thingsCollection.findOne( query );
-					String parentId = p.get("_id").toString();
+
+					String parentId = "" + getIdFromThing("forklift", castSerialNumber(baseSerial +  i) );
+					getIdFromThing("forkliftBattery", castSerialNumber(baseSerial +  i) );
+					getIdFromThing("forkliftSolar",   castSerialNumber(baseSerial +  i) );
 
 					StringBuilder sb = new StringBuilder( "" );
 					sb.append( "{ \"serialNumber\": \"" + castSerialNumber( baseSerial + i) + "\", ");
@@ -570,49 +516,22 @@ public class parentChildren implements controllerInterface
 					sb.append( "\"children\": [ " );
 					sb.append( "{" );
 					sb.append( "\"thingTypeCode\" : \"forkliftBattery\", ");
-					sb.append( "\"serialNumber\" : \"" + castSerialNumber( baseSerial + thingsPerMessage + i) + "\"" );
+					sb.append( "\"serialNumber\" : \"" + castSerialNumber( baseSerial + i) + "\"" );
 					sb.append( " },");
 					sb.append( "{" );
 					sb.append( "\"thingTypeCode\" : \"forkliftSolar\", ");
-					sb.append( "\"serialNumber\" : \"" + castSerialNumber( baseSerial + 2*thingsPerMessage + i) + "\"" );
+					sb.append( "\"serialNumber\" : \"" + castSerialNumber( baseSerial  + i) + "\"" );
 					sb.append( " }");
 					sb.append( " ] } ");
 
 					url = "http://localhost:8080/riot-core-services/api/thing/" + parentId;
 					res = httpPatchMessage( url, sb.toString() );
-					System.out.print( res );
+					System.out.println( res );
 
 				} catch (Exception e) {
 					System.out.println(e.getCause());
 				}
 			}
-/*
-			//update parent for forkliftSolar
-			for (i=0; i<thingsPerMessage; i++) {
-				try {
-					BasicDBObject query = new BasicDBObject( "serialNumber", castSerialNumber(baseSerial +  i) )
-							.append( "thingTypeCode", "forklift" );
-					DBObject p =  thingsCollection.findOne( query );
-					String parentId = p.get("_id").toString();
-
-					StringBuilder sb = new StringBuilder( "" );
-					sb.append( "{ \"serialNumber\": \"" + castSerialNumber( baseSerial + i) + "\", ");
-					sb.append( "\"thingTypeCode\": \"forklift\", " );
-					sb.append( "\"groupName\" : \"Santa Monica\", " );
-					sb.append( "\"name\" : \"" + castSerialNumber( baseSerial + i) +"\", " );
-					sb.append( "\"children\": [ {" );
-					sb.append( "\"thingTypeCode\" : \"forkliftBattery\", ");
-					sb.append( "\"serialNumber\" : \"" + castSerialNumber( baseSerial + thingsPerMessage + i) + "\"" );
-					sb.append( " } ] } ");
-
-					url = "http://localhost:8080/riot-core-services/api/thing/" + parentId;
-					res = httpPatchMessage( url, sb.toString() );
-					System.out.print( res );
-				} catch (Exception e) {
-					System.out.println(e.getCause());
-				}
-			}
-*/
 		} catch (Exception e) {
 			System.out.println(e.getCause());
 		}
@@ -653,9 +572,14 @@ public class parentChildren implements controllerInterface
 		StringBuffer sb = new StringBuffer();
 		Scanner in;
 		in = new Scanner(System.in);
-		Integer delayBetweenThings = 10;
+		Integer delayBetweenThings = 800;
+		Integer thingsPerMessage = 400;
 
-		thingsToChange = Long.parseLong( cu.prompt( "How many things wants to change?", "" + thingsToChange ) );
+		thingsPerMessage = Integer.parseInt( cu.prompt( "How many things in each blink?", "" + thingsPerMessage ) );
+
+		Long timesBlink = thingsToChange / thingsPerMessage;
+		timesBlink = Long.parseLong( cu.prompt( "How many times sends the blink?", "" + timesBlink ) );
+		thingsToChange = timesBlink * thingsPerMessage;
 
 		delayBetweenThings = Integer.parseInt( cu.prompt( "How many ms beetween each blink?", "" + delayBetweenThings ) );
 
@@ -684,30 +608,96 @@ public class parentChildren implements controllerInterface
 
 		System.out.println("The max value for _id is " + maxId);
 
-		for (Integer i = 0; i < thingsToChange; ) {
-			DBObject filterById = new BasicDBObject("_id", random.nextLong()%maxId);
-			cursor = thingsCollection.find(filterById).limit(1);
-			try {
-				if (cursor.hasNext()) {
-					cursor.next();
-					serialNumber = cursor.curr().get("serialNumber").toString();
-					thingType    = cursor.curr().get("thingTypeCode").toString();
-					if ( thingType.equals( "forklift") || thingType.equals( "forkliftBattery") || thingType.equals( "forkliftSolar") )
+		String thingTypeCode= "forkliftBattery";
+		for (Integer i = 0; i < thingsToChange / thingsPerMessage; i ++ )
+		{
+			//select the thingtype
+			switch( random.nextInt( 2 ) )
+			{
+				case 0:
+					if (allThings)
 					{
-						if ( allThings || thingType.equals( "forkliftBattery") || thingType.equals( "forkliftSolar") )
+						thingTypeCode = "forklift";
+					} else {
+						thingTypeCode = "forkliftBattery";
+					}
+					break;
+				case 1:
+					thingTypeCode = "forkliftSolar";
+					break;
+				case 2:
+					thingTypeCode = "forkliftBattery";
+					break;
+			}
+
+			//start building the message
+			serialNumber = cursor.curr().get("serialNumber").toString();
+			sequenceNumber = cu.getSequenceNumber();
+
+			String topic = "/v1/data/ALEB/" + thingTypeCode;
+			StringBuffer msg = new StringBuffer();
+			msg.append(" sn," + sequenceNumber + "\n");
+			msg.append(",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n");
+			Long time = new Date().getTime();
+
+			System.out.println ("\nsn:" + sequenceNumber + " " + thingTypeCode + "  " + thingsPerMessage + " things per msg");
+			//select a random object n times
+			for (int j = 0; j < thingsPerMessage; )
+			{
+				DBObject filterById = new BasicDBObject( "_id", random.nextLong() % maxId );
+				cursor = thingsCollection.find( filterById ).limit( 1 );
+				try
+				{
+					if( cursor.hasNext() )
+					{
+						cursor.next();
+						serialNumber = cursor.curr().get("serialNumber").toString();
+						thingType    = cursor.curr().get("thingTypeCode").toString();
+						Random r = new Random();
+
+						if ( thingType.equals( thingTypeCode) )
 						{
-							System.out.println( i + " " + serialNumber + " " + thingType );
-							sendChangeMessage(serialNumber, thingType, delayBetweenThings );
-							i++;
+							if( thingTypeCode.equals( "forklift" ) )
+							{
+								msg.append( serialNumber + "," + time + ",lastDetectTime," + time + "\n" );
+								msg.append( serialNumber + "," + time + ",brand," + getRandomBrand() + "\n" );
+								msg.append( serialNumber + "," + time + ",status," + getRandomStatus() + "\n" );
+								msg.append( serialNumber + "," + time + ",usage," + getRandomUsage() + "\n" );
+							}
+							else
+							{
+								msg.append( serialNumber + "," + time + ",location,-118.44395517462448;34.04811656588989;0.0\n" );
+								msg.append( serialNumber + "," + time + ",locationXYZ," + r.nextInt( 499 ) + ".0;" + r.nextInt( 499 ) + ".0;0.0\n" );
+								msg.append( serialNumber + "," + time + ",logicalReader,LR" + r.nextInt( 10 ) + "\n" );
+								msg.append( serialNumber + "," + time + ",lastDetectTime," + time + "\n" );
+							}
+
+							j++;
+							if ( j < 107)
+							{
+								System.out.print( cu.alignRight( serialNumber, 6 ) + " " );
+								if( j % 15 == 0 )
+								{
+									System.out.println( "" );
+								}
+							} else {
+								if( j % 25 == 0 )
+								{
+									System.out.print( "." );
+								}
+							}
 						}
 					}
 				}
-			} finally {
-				cursor.close();
+				finally
+				{
+					cursor.close();
+				}
 			}
+			mq.publishSyncMessage( topic, msg.toString() );
+			cu.sleep( delayBetweenThings );
 
 		}
-
 
 	}
 
@@ -758,7 +748,7 @@ public class parentChildren implements controllerInterface
 	public void execute() {
 		setup();
 		HashMap<String, String> options = new HashMap<String,String>();
-
+		getThingsPerThingType();
 		options.put("1", "create ThingTypes ");
 		options.put("2", "create Parent-Child things");
 		options.put("3", "change things ");

@@ -1,32 +1,42 @@
 {
-  "archived":false,
-  "name":"forklift battery",
-  "thingTypeCode":"forkliftBattery",
-  "thingTypeTemplateId": 1,
-  "children":[
-
-  ],
-  "parents" : [
-      PARENT_ID
-  ],
-  "group.id":3,
-  "autoCreate":true,
-  "fields":[
+    "archived":false,
+    "name":"forklift battery",
+    "thingTypeCode":"forkliftBattery",
+    "thingTypeTemplateId": 1,
+    "children":[
+    ],
+    "parents" : [
+        PARENT_ID
+    ],
+    "group.id":3,
+    "autoCreate":true,
+    "fields":[
     {
-      "symbol":"",
-      "timeSeries":true,
-      "unit":"",
-      "name":"locationXYZ",
-      "id":2,
-      "type":3
+        "symbol":"",
+        "timeSeries":true,
+        "unit":"",
+        "name":"locationXYZ",
+        "id":2,
+        "type":3
     },
     {
-      "symbol":"",
-      "timeSeries":true,
-      "unit":"",
-      "name":"shift",
-      "id":11,
-      "type":7
+          "name": "shift",
+          "symbol": "",
+          "typeParentId": 20,
+          "typeParentCode": "DATA_TYPE",
+          "defaultValue": "",
+          "thingTypeFieldTemplateId": null,
+          "multiple": true,
+          "typeDescription": "Shift",
+          "typeParent": "DATA_TYPE",
+          "type": 7,
+          "typeCode": "SHIFT",
+          "timeToLive": null,
+          "timeSeries": true,
+          "typeCode.type": "Native Objects",
+          "unit": null,
+          "typeParentDescription": "Data Type",
+          "id": 75
     },
     {
       "symbol":"",
@@ -76,14 +86,25 @@
       "id":9,
       "type":4
     },
-    {
-      "symbol":"",
-      "timeSeries":true,
-      "unit":"",
-      "name":"logicalReader",
-      "id":3,
-      "type":1
-    },
+        {
+          "name": "logicalReader",
+          "typeParentDescription": "Data Type",
+          "symbol": "",
+          "typeParentId": 20,
+          "typeParentCode": "DATA_TYPE",
+          "defaultValue": "",
+          "thingTypeFieldTemplateId": null,
+          "multiple": false,
+          "typeDescription": "Logical Reader",
+          "typeParent": "DATA_TYPE",
+          "type": 23,
+          "typeCode": "LOGICAL_READER",
+          "timeToLive": null,
+          "timeSeries": true,
+          "typeCode.type": "Native Objects",
+          "unit": null,
+          "id": 74
+        },
     {
       "symbol":"",
       "timeSeries":true,
@@ -93,20 +114,31 @@
       "type":2
     },
     {
-      "symbol":"",
-      "timeSeries":true,
-      "unit":"",
-      "name":"zone",
-      "id":4,
-      "type":1
+          "name": "zone",
+          "symbol": "",
+          "typeParentId": 20,
+          "typeParentCode": "DATA_TYPE",
+          "defaultValue": "",
+          "thingTypeFieldTemplateId": null,
+          "multiple": false,
+          "typeDescription": "Zone",
+          "typeParent": "DATA_TYPE",
+          "type": 9,
+          "typeCode": "ZONE",
+          "timeToLive": null,
+          "timeSeries": false,
+          "typeCode.type": "Native Objects",
+          "unit": null,
+          "typeParentDescription": "Data Type",
+          "id": 76
     },
     {
-      "symbol":"ms",
-      "timeSeries":false,
-      "unit":"millisecond",
-      "name":"lastLocateTime",
-      "id":6,
-      "type":4
+        "symbol":"ms",
+        "timeSeries":false,
+        "unit":"millisecond",
+        "name":"lastLocateTime",
+        "id":6,
+        "type":4
     }
   ]
 }
