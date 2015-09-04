@@ -1,0 +1,112 @@
+
+Timeseries are saved in two MongoDB Collections
+    - thingSnapshot
+    - thingSnapshotIds
+
+Below two queries to get the related records for thing with id 467
+
+/*
+db.getCollection('thingSnapshotIds').find({ "value._id" : 467})
+*/
+{
+    "_id" : ObjectId("55e737f6d4c6509ab625840c"),
+    "time" : NumberLong(1441216498526),
+    "value" : {
+        "_id" : NumberLong(467),
+        "groupTypeId" : NumberLong(3),
+        "groupTypeName" : "Store",
+        "groupTypeCode" : "null",
+        "groupId" : NumberLong(3),
+        "groupCode" : "SM",
+        "groupName" : "Santa Monica",
+        "thingTypeId" : NumberLong(7),
+        "thingTypeCode" : "forkliftBattery",
+        "name" : "000000000000000000096",
+        "serialNumber" : "000000000000000000096",
+        "zone" : {
+            "thingTypeFieldId" : NumberLong(49),
+            "time" : ISODate("2015-09-02T17:54:58.526Z"),
+            "value" : {
+                "id" : NumberLong(1),
+                "code" : "Enance",
+                "name" : "Entrance",
+                "points" : [
+                    [
+                        -118.4439805447409952,
+                        34.0481198168392751
+                    ],
+                    [
+                        -118.4439724981129984,
+                        34.0481025933026302
+                    ],
+                    [
+                        -118.4439327245700042,
+                        34.0481144227167363
+                    ],
+                    [
+                        -118.4439406468810034,
+                        34.0481312065954569
+                    ]
+                ]
+            },
+            "changed" : true
+        },
+        "lastDetectTime" : {
+            "thingTypeFieldId" : NumberLong(45),
+            "time" : ISODate("2015-09-02T17:54:58.526Z"),
+            "value" : "1436985931348",
+            "changed" : true
+        },
+        "logicalReader" : {
+            "thingTypeFieldId" : NumberLong(47),
+            "time" : ISODate("2015-09-02T17:54:58.526Z"),
+            "value" : null,
+            "changed" : true
+        },
+        "location" : {
+            "thingTypeFieldId" : NumberLong(48),
+            "time" : ISODate("2015-09-02T17:54:58.526Z"),
+            "value" : "-118.44395517462448;34.04811656588989;0.0",
+            "changed" : true
+        },
+        "lastLocateTime" : {
+            "thingTypeFieldId" : NumberLong(50),
+            "time" : ISODate("2015-09-02T17:54:58.526Z"),
+            "value" : "1436985931348",
+            "changed" : true
+        },
+        "locationXYZ" : {
+            "thingTypeFieldId" : NumberLong(39),
+            "time" : ISODate("2015-09-02T17:54:58.526Z"),
+            "value" : "498.0;134.0;0.0",
+            "changed" : true
+        }
+    }
+}
+
+
+
+/*
+db.getCollection('thingSnapshotIds').find({ "_id" : 467})
+*/
+{
+    "_id" : NumberLong(467),
+    "blinks" : [
+        {
+            "time" : NumberLong(1441216498526),
+            "blinkId" : ObjectId("55e737f6d4c6509ab625840c")
+        },
+        {
+            "time" : NumberLong(1441222384318),
+            "blinkId" : ObjectId("55e74ef1d4c610e03223b88b")
+        },
+        {
+            "time" : NumberLong(1441223434393),
+            "blinkId" : ObjectId("55e7530bd4c61744030880bd")
+        },
+        {
+            "time" : NumberLong(1441223596771),
+            "blinkId" : ObjectId("55e753add4c617440308b0dc")
+        }
+    ]
+}

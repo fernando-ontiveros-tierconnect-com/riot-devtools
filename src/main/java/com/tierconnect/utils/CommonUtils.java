@@ -666,6 +666,16 @@ public class CommonUtils
 
 	}
 
+	public String rtrim (Object s, int n)
+	{
+		return alignRight( s.toString(),n, ' ' );
+	}
+
+	public String ltrim (Object s, int n)
+	{
+		return alignLeft( s.toString(),n, ' ' );
+	}
+
 	public String alignRight (String s, int n)
 	{
 		return alignRight( s,n, ' ' );

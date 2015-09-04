@@ -49,6 +49,7 @@ public class Main {
 			"SharafEnterprise",
 			"parentChildren",
 			"timeseries",
+			"stats",
 			"unknown"
 	};
 
