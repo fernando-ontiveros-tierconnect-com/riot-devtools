@@ -156,7 +156,7 @@ public class stats implements controllerInterface
 
 	private void displayALEBlog ()
 	{
-		Date time = new Date( new Date().getTime() - 1000*60*10);
+		Date time = new Date( new Date().getTime() - 1001000*60*10);
 
 		System.out.println( "log from past 10 minutes ( " + time.toString() + ")");
 		displayALEBlogHeader();

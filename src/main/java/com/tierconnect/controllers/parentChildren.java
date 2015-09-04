@@ -287,6 +287,7 @@ public class parentChildren implements controllerInterface
 			System.out.println(e.getCause());
 		} finally
 		{
+			System.out.println("send tickle /v1/edge/dn/_ALL_/update/thingTypes");
 			String topic = "/v1/edge/dn/_ALL_/update/thingTypes";
 			cu.publishSyncMessage( topic, "" );
 

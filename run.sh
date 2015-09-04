@@ -1,2 +1,2 @@
-java -cp build/libs/riot-devtools.jar:../riot-classpath/* com.tierconnect.dev.Main
+java -cp build/libs/riot-devtools.jar:libs/* com.tierconnect.dev.Main
 
