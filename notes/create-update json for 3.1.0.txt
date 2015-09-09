@@ -1,0 +1,123 @@
+//Update
+{
+  "thingTypeCode": "parent",
+  "group": ">GROUPCODE100>GROUPCODE1002", 
+  "name": "TP10049",
+  "serialNumber": "TP10049",  
+  "parent": {
+    "serialNumber": "J00001",
+    "thingTypeCode": "jackets_code"
+  },
+  "udfs": {
+    "Nombre": {
+      "value": "General Motors",
+      "time": "2015-08-25T10:50:45.91EZ"
+    },
+    "Phone": {
+      "value": 12345,
+      "time": "2015-08-25T10:50:45.91EZ"
+    },
+    "Shift1": {
+      "value": "SHIFTCODE1001",
+      "time": "2015-08-25T10:50:45.91EZ"
+    },
+    "LogicalReader1": {
+      "value": "LOGREADERCODE1002",
+      "time": "2015-08-25T10:50:45.91EZ"
+    },
+    "Zone1": {
+      "value": "ZONECODE1001",
+      "time": "2015-08-25T10:50:45.91EZ"
+    },
+    "Group1": {
+      "value": ">GROUPCODE100>GROUPCODE1002",
+      "time": "2015-08-25T10:50:45.91EZ"
+    },
+    "ThingType1": {
+      "value": "RFID1234567890",  
+      "time": "2015-08-25T10:50:45.91EZ"
+    }      
+  },
+  "children": [
+    {
+      "serialNumber": "000000000000000000474",
+      "thingTypeCode": "default_rfid_thingtype"
+      "udfs": 
+      {
+         "Nombre": {
+            "value": "GENERAL MOTTORS",
+            "time": "2015-08-25T10:50:45.91EZ"
+           },
+         "Nombre2": {
+            "value": "GENERAL MOTTORS",
+            "time": "2015-08-25T10:50:45.91EZ"
+           }  
+      }
+    },
+    {
+      "serialNumber": "000000000000000000475",
+      "thingTypeCode": "default_rfid_thingtype55"
+    },
+    {
+      "serialNumber": "000000000000000000476",
+      "thingTypeCode": "default_rfid_thingtype"
+    }
+  ]
+}
+
+
+//Create
+{
+  "thingTypeCode": "parent",
+  "group": ">GROUPCODE100>GROUPCODE1002", 
+  "name": "TP10049",
+  "serialNumber": "TP10049",  
+  "parent": {
+    "serialNumber": "J00001",
+    "thingTypeCode": "jackets_code"
+  },
+  "udfs": {
+    "Nombre": {
+      "value": "General Motors",
+      "time": "2015-08-25T10:50:45.91EZ"
+    },
+    "Phone": {
+      "value": 12345,
+      "time": "2015-08-25T10:50:45.91EZ"
+    },
+    "Shift1": {
+      "value": "SHIFTCODE1001",
+      "time": "2015-08-25T10:50:45.91EZ"
+    },
+    "LogicalReader1": {
+      "value": "LOGREADERCODE1002",
+      "time": "2015-08-25T10:50:45.91EZ"
+    },
+    "Zone1": {
+      "value": "ZONECODE1001",
+      "time": "2015-08-25T10:50:45.91EZ"
+    },
+    "Group1": {
+      "value": ">GROUPCODE100>GROUPCODE1002",
+      "time": "2015-08-25T10:50:45.91EZ"
+    },
+    "ThingType1": {
+      "value": "RFID1234567890",  
+      "time": "2015-08-25T10:50:45.91EZ"
+    }      
+  },
+  "children": [
+    {
+      "serialNumber": "000000000000000000474",
+      "thingTypeCode": "default_rfid_thingtype"
+    },
+    {
+      "serialNumber": "000000000000000000475",
+      "thingTypeCode": "default_rfid_thingtype55"
+    },
+    {
+      "serialNumber": "000000000000000000476",
+      "thingTypeCode": "default_rfid_thingtype"
+    }
+  ]
+}
