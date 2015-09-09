@@ -19,11 +19,13 @@ mqtttomongo.batch_size = 1000
 mqtt.topic        = MqttToMongo
 mqtt.qos          = 0
 mqtt.broker       = tcp://localhost:1883
-#mqtt.broker       = tcp://10.100.0.226:1883
 mqtt.clientId     = defaultClient
 
 #mongo connection
 mongodb.host     = localhost
-#mongodb.host     = 10.100.0.226
 mongodb.port     = 27017
 mongodb.database = riot_main
+
+#ALE Bridge
+ale.host = localhost
+ale.port = 9090

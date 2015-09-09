@@ -31,6 +31,7 @@ import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -310,7 +311,7 @@ public class mapreduce implements controllerInterface
 		Scanner in;
 		in = new Scanner(System.in);
 
-		System.out.print(cu.ANSI_BLACK + "\nenter the starting serialNumber[" + cu.ANSI_GREEN + lastSerialNumber + cu.ANSI_BLACK + "]:");
+		System.out.print(cu.black() + "\nenter the starting serialNumber[" + cu.green() + lastSerialNumber + cu.black() + "]:");
 		String tagIn = in.nextLine();
 		if (tagIn.equals("")) {
 			tagIn = lastSerialNumber;
@@ -322,7 +323,7 @@ public class mapreduce implements controllerInterface
 		serialNumber = Long.parseLong( tag);
 
 		//quantity
-		System.out.print(cu.ANSI_BLACK + "\nenter the quantity of things to create[" + cu.ANSI_GREEN + lastQuantity + cu.ANSI_BLACK + "]:");
+		System.out.print(cu.black() + "\nenter the quantity of things to create[" + cu.green() + lastQuantity + cu.black() + "]:");
 		tagIn = in.nextLine();
 		if (tagIn.equals("")) {
 			tagIn = lastQuantity;
@@ -332,7 +333,7 @@ public class mapreduce implements controllerInterface
 		lastQuantity = tagIn;
 		Long quantity = Long.parseLong( lastQuantity);
 
-		System.out.print(cu.ANSI_BLACK + "\nHow many miliseconds (ms) between each blink ?[" + cu.ANSI_GREEN + delayBetweenThings + cu.ANSI_BLACK + "]:");
+		System.out.print(cu.black() + "\nHow many miliseconds (ms) between each blink ?[" + cu.green() + delayBetweenThings + cu.black() + "]:");
 		tagIn = in.nextLine();
 		if (tagIn.equals("")) {
 			//delayBetweenThings = delayBetweenThings;
@@ -668,7 +669,7 @@ public class mapreduce implements controllerInterface
 		Long thingsToChange = 0L;
 		Integer delayBetweenThings = 10;
 
-		System.out.print(cu.ANSI_BLACK + "\nHow many things wants to change?[" + cu.ANSI_GREEN + "1000" + cu.ANSI_BLACK + "]:");
+		System.out.print(cu.black() + "\nHow many things wants to change?[" + cu.green() + "1000" + cu.black() + "]:");
 		String tagIn = in.nextLine();
 		if (tagIn.equals("")) {
 			tagIn = "1000";
@@ -677,7 +678,7 @@ public class mapreduce implements controllerInterface
 		}
 		thingsToChange = Long.parseLong(tagIn);
 
-		System.out.print(cu.ANSI_BLACK + "\nHow many miliseconds (ms) between each blink ?[" + cu.ANSI_GREEN + delayBetweenThings + cu.ANSI_BLACK + "]:");
+		System.out.print(cu.black() + "\nHow many miliseconds (ms) between each blink ?[" + cu.green() + delayBetweenThings + cu.black() + "]:");
 		tagIn = in.nextLine();
 		if (tagIn.equals("")) {
 			//delayBetweenThings = delayBetweenThings;
@@ -685,7 +686,7 @@ public class mapreduce implements controllerInterface
 			delayBetweenThings = Integer.parseInt( tagIn );
 		}
 
-		System.out.print(cu.ANSI_BLACK + "\nChanging " + thingsToChange + " things with a delay of " + delayBetweenThings + " ms.");
+		System.out.print(cu.black() + "\nChanging " + thingsToChange + " things with a delay of " + delayBetweenThings + " ms.");
 
 		//get the max number of _id
 		Long maxId = 0L;
@@ -742,7 +743,7 @@ public class mapreduce implements controllerInterface
 		Long thingsToChange = 0L;
 		Integer delayBetweenThings = 10;
 
-		System.out.print(cu.ANSI_BLACK + "\nserialNumber[" + cu.ANSI_GREEN + lastSerialNumber + cu.ANSI_BLACK + "]:");
+		System.out.print(cu.black() + "\nserialNumber[" + cu.green() + lastSerialNumber + cu.black() + "]:");
 		String tagIn = in.nextLine();
 		if (tagIn.equals("")) {
 			tagIn = lastSerialNumber;
@@ -753,7 +754,7 @@ public class mapreduce implements controllerInterface
 		String serialNumber = castSerialNumber(Long.parseLong( tagIn ));
         lastSerialNumber = serialNumber;
 
-		System.out.print(cu.ANSI_BLACK + "\nChanging the thing " + serialNumber );
+		System.out.print(cu.black() + "\nChanging the thing " + serialNumber );
 
 		//get the max number of _id
 		Long maxId = 0L;
@@ -807,10 +808,10 @@ public class mapreduce implements controllerInterface
 		sb.append(serialNumber + "," + time + "," + thingField + "," + "\"" + commaValue + "\"\n");
 
 
-		System.out.println(" serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "");
-		System.out.println("thingTypeCode: " + cu.ANSI_BLUE + thingTypeCode + cu.ANSI_BLACK + "");
-		System.out.println("        field: " + cu.ANSI_BLUE + thingField + cu.ANSI_BLACK + "");
-		System.out.println("        value: " + cu.ANSI_BLUE + commaValue + cu.ANSI_BLACK + "");
+		System.out.println(" serialNumber: " + cu.blue() + serialNumber + cu.black() + "");
+		System.out.println("thingTypeCode: " + cu.blue() + thingTypeCode + cu.black() + "");
+		System.out.println("        field: " + cu.blue() + thingField + cu.black() + "");
+		System.out.println("        value: " + cu.blue() + commaValue + cu.black() + "");
 
 		DBObject prevThing = cu.getThing( serialNumber );
 
@@ -887,10 +888,10 @@ public class mapreduce implements controllerInterface
 		sb.append(serialNumber + "," + time + "," + thingFieldJSON + "," + "\"" + jsonStr.toString() + "\"\n");
 
 
-		System.out.println(" serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "");
-		System.out.println("thingTypeCode: " + cu.ANSI_BLUE + thingTypeCode + cu.ANSI_BLACK + "");
-		System.out.println("        field: " + cu.ANSI_BLUE + thingFieldJSON + cu.ANSI_BLACK + "");
-		System.out.println("        value: " + cu.ANSI_BLUE + jsonStr.toString() + cu.ANSI_BLACK + "");
+		System.out.println(" serialNumber: " + cu.blue() + serialNumber + cu.black() + "");
+		System.out.println("thingTypeCode: " + cu.blue() + thingTypeCode + cu.black() + "");
+		System.out.println("        field: " + cu.blue() + thingFieldJSON + cu.black() + "");
+		System.out.println("        value: " + cu.blue() + jsonStr.toString() + cu.black() + "");
 
 		DBObject prevThing = cu.getThing( serialNumber );
 
@@ -970,7 +971,7 @@ public class mapreduce implements controllerInterface
 
 	public void execute() {
 		setup();
-		HashMap<String, String> options = new HashMap<String,String>();
+		HashMap<String, String> options = new LinkedHashMap<String,String>();
 
 		options.put("1", "create Thing Types for Parent-Child test");
 		options.put("2", "create 100k things for Parent-Child test");
@@ -1016,7 +1017,7 @@ public class mapreduce implements controllerInterface
 					sendJSONBlink();
 				}
 
-				System.out.println(cu.ANSI_BLACK +  "\npress [enter] to continue");
+				System.out.println(cu.black() +  "\npress [enter] to continue");
 				Scanner in = new Scanner(System.in);
 				in.nextLine();
 			}

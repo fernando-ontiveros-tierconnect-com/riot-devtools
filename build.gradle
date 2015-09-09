@@ -1,9 +1,37 @@
+buildscript {
+
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        // Add dependency for build script,
+        // so we can access Git from our
+        // build script.
+        classpath 'org.ajoberstar:grgit:1.1.0'
+    }
+
+}
+
 apply plugin: 'java'
+apply plugin: 'application'
 
 repositories {
     mavenCentral()
 }
 
+//saving the build number in file build.txt
+Long buildNumber
+File f = new File('./src/main/resources/build.txt')
+buildNumber = Long.parseLong(f.getText().trim() )
+buildNumber ++
+
+f.write("" + buildNumber)
+System.out.println(f.getText());
+
+String version = "1.0." + buildNumber
+
+System.out.println("**  generating version " + version )
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
@@ -50,3 +78,43 @@ task compileDev (type: JavaCompile) {
     classpath = sourceSets.main.compileClasspath
     destinationDir = sourceSets.main.output.classesDir
 }
+
+
+task copy0(type: Copy) {
+    from './libs'
+    into './build/dist/libs'
+}
+
+task copy1(type: Copy) {
+    dependsOn copy0
+    from './build/libs/riot-devtools.jar'
+    into './build/dist/libs'
+}
+
+task copy2(type: Copy) {
+    dependsOn copy1
+    from './vizix.config.default'
+    into './build/dist/'
+}
+
+task copy3(type: Copy) {
+    dependsOn copy2
+    from './run.sh'
+    into './build/dist/'
+}
+
+task copy4(type: Copy) {
+    dependsOn copy3
+    from './run.bat'
+    into './build/dist/'
+}
+
+task dist(type: Zip) {
+    dependsOn copy4
+
+    archiveName 'riot-devtools-' + version + '.zip'
+    from './build/dist'
+    into 'riot-devtools/'
+}
+
+

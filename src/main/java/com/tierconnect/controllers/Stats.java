@@ -11,6 +11,7 @@ import com.tierconnect.utils.MqttUtils;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Scanner;
 
 /**
@@ -166,7 +167,7 @@ public class stats implements controllerInterface
 
 	public void execute() {
 		setup();
-		HashMap<String, String> options = new HashMap<String,String>();
+		HashMap<String, String> options = new LinkedHashMap<String,String>();
 		options.put("1", "ALEB log ");
 		options.put("2", "ALEB log Continuos");
 
@@ -181,7 +182,7 @@ public class stats implements controllerInterface
 					displayALEBlogContinuous();
 				}
 
-				System.out.println(cu.ANSI_BLACK +  "\npress [enter] to continue");
+				System.out.println(cu.black() +  "\npress [enter] to continue");
 				Scanner in = new Scanner(System.in);
 				in.nextLine();
 			}

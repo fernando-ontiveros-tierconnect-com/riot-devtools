@@ -40,6 +40,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
 import java.util.Scanner;
 
 /**
@@ -51,13 +52,12 @@ import java.util.Scanner;
 
 public class CommonUtils
 {
-    final public String ANSI_RESET = "\u001B[0m";
-    final public String ANSI_BLACK = "\u001B[30m";
-    final public String ANSI_RED   = "\u001B[31m";
-    final public String ANSI_GREEN = "\u001B[32m";
-    final public String ANSI_BLUE  = "\u001B[34m";
-    final public String ANSI_CLEAR = "\u001B[2J";
-    final public String ANSI_EOF   = "\u001B[K";
+	public String OS;
+    //final public String ANSI_BLACK = "\u001B[30m";
+    //final public String ANSI_RED   = "\u001B[31m";
+    //final public String ANSI_GREEN = "\u001B[32m";
+    //final public String ANSI_BLUE  = "\u001B[34m";
+    //final public String ANSI_CLEAR = "\u001B[2J";
 
     //properties used for mqtt connection
     public MqttClient mqttClient;
@@ -70,10 +70,14 @@ public class CommonUtils
 	DBCollection thingsCollection;
     int arrivedMessage = 0;
 
+
 	//setup values
-	String servicesApi;
-	String mqtthost;
-	String mqttport;
+	public String servicesApi;
+	public String aleHost;
+	public String alePort;
+	String broker;
+	String clientId;
+	int qos;
 
 
 	public CommonUtils() {
@@ -81,11 +85,20 @@ public class CommonUtils
 
     public String moveTo(int x, int y)
     {
+		if (OS.equals( "WINDOWS" ))
+		{
+			return "";
+		}
         String s = "\u001B[" + y + ";" + x +"H";
         return s;
     }
 
-    public void setupMqtt(String broker, String clientId, int qos, String topic, MqttCallback callback)
+	public void defaultMqttConnection()
+	{
+		setupMqtt( broker, clientId, qos, null, null );
+	}
+
+	public void setupMqtt(String broker, String clientId, int qos, String topic, MqttCallback callback)
     {
         //setup mqtt connection
         try {
@@ -105,13 +118,13 @@ public class CommonUtils
 			{
 				mqttClient.subscribe( topic );
 			}
-            System.out.println( ANSI_GREEN + "Connected to Mqtt broker: " + ANSI_BLACK + broker );
+            System.out.println( green() + "Connected to Mqtt broker: " + black() + broker );
 
         } catch(MqttException me) {
-            System.out.println(ANSI_RED);
+            System.out.println(red());
             System.out.println(me.getMessage());
             System.out.println(me);
-            System.out.println(ANSI_BLACK);
+            System.out.println(black());
             me.printStackTrace();
             System.exit(0);
         }
@@ -123,42 +136,110 @@ public class CommonUtils
         try {
             mongoClient = new MongoClient( mongoHost, mongoPort );
             db = mongoClient.getDB( mongoDatabase );
-            System.out.println(moveTo(1,10) + ANSI_GREEN + "Connected to " + mongoHost + ":" + mongoPort + "/" + mongoDatabase);
-            System.out.print(moveTo(1,13) + ANSI_BLACK);
+            System.out.println(moveTo(1,10) + green() + "Connected to " + mongoHost + ":" + mongoPort + "/" + mongoDatabase);
+            System.out.print(moveTo(1,13) + black());
 
             mongoClient.setWriteConcern(WriteConcern.JOURNALED);
             //mongoClient.setWriteConcern(WriteConcern.UNACKNOWLEDGED);
 			thingsCollection        = db.getCollection("things");
 
         } catch ( UnknownHostException me) {
-            System.out.println(ANSI_RED);
+            System.out.println(red());
             System.out.println(me.getMessage());
             System.out.println(me);
-            System.out.println(ANSI_BLACK);
+            System.out.println(black());
             me.printStackTrace();
             System.exit(0);
         } catch(MongoException me) {
-            System.out.println(ANSI_RED);
+            System.out.println(red());
             System.out.println(me.getMessage());
             System.out.println(me);
-            System.out.println(ANSI_BLACK);
+            System.out.println(black());
             me.printStackTrace();
             System.exit(0);
         }
     }
 
-    public void setTitle( String title)
-    {
+	private String getOS ()
+	{
+		String str = System.getProperty("os.name").toUpperCase();
+		String[] splited = str.split("\\s+");
+		return splited[0].trim();
+	}
 
-        System.out.print (ANSI_CLEAR + ANSI_BLUE +  moveTo(0,0) );
+	public String clear()
+	{
+		String code = "\u001B[2J";
+
+		if( OS.equals( "WINDOWS" ) ) {
+			code = "\n\n";
+		}
+		return code;
+	}
+
+	public String black()
+	{
+		String code = "\u001B[30m";
+
+		if( OS.equals( "WINDOWS" ) ) {
+			code = "";
+		}
+		return code;
+	}
+
+	public String red()
+	{
+		String code = "\u001B[31m";
+
+		if( OS.equals( "WINDOWS" ) ) {
+			code = "";
+		}
+		return code;
+	}
+
+	public String green()
+	{
+		String code = "\u001B[32m";
+
+		if( OS.equals( "WINDOWS" ) ) {
+			code = "";
+		}
+		return code;
+	}
+
+	public String blue()
+	{
+		String code = "\u001B[34m";
+
+		if( OS.equals( "WINDOWS" ) ) {
+			code = "";
+		}
+		return code;
+	}
+
+
+	public void setTitle( String title)
+    {
+		String version = "";
+
+		try
+		{
+			version = "1.0." + read( "/build.txt" );
+		} catch (Exception e) {
+			System.out.println(e.getCause());
+		}
+
+		OS = getOS();
+		System.out.println(OS);
+        System.out.print (clear() + blue() +  moveTo(0,0) );
         System.out.println(" __      ___ _______      ");
         System.out.println(" \\ \\    / (_)___  (_)     ");
         System.out.println("  \\ \\  / / _   / / ___  __");
         System.out.println("   \\ \\/ / | | / / | \\ \\/ /");
         System.out.println("    \\  /  | |/ /__| |>  < ");
         System.out.println("     \\/   |_/_____|_/_/\\_\\");
-        System.out.println("  " + title);
-        System.out.println(ANSI_BLACK );
+        System.out.println("  " + title + " " + version );
+        System.out.println(black() );
 
 
         System.out.print ( moveTo(1,9) );
@@ -175,18 +256,22 @@ public class CommonUtils
 
             prop.load(input);
 
+			Random r = new Random();
 			//generic values
 			servicesApi = prop.getProperty( "services.api" );
-			mqtthost    = prop.getProperty("mqtt.host");
-			mqttport    = prop.getProperty("mqtt.port");
+			aleHost     = prop.getProperty( "ale.host" );
+			alePort     = prop.getProperty( "ale.port" );
+			broker = prop.getProperty( "mqtt.broker" );
+			clientId = prop.getProperty( "mqtt.clientId" ) + "_" + r.nextInt(1000);
+			qos = Integer.parseInt( prop.getProperty( "mqtt.qos" ) );
 
             return prop;
 
         } catch (IOException ex) {
-            System.out.println(ANSI_RED);
+            System.out.println(red());
             System.out.println(ex.getMessage());
             System.out.println("exception: "+ex);
-            System.out.println(ANSI_BLACK);
+            System.out.println(black());
             System.exit(0);
         } finally {
             if (input != null) {
@@ -218,9 +303,9 @@ public class CommonUtils
 	//menu functions
 	public void showItemMenu(String i, String option)
 	{
-		System.out.print(ANSI_RED);
+		System.out.print(red());
 		System.out.print(i +". ");
-		System.out.print(ANSI_BLACK);
+		System.out.print(black());
 		System.out.print(option);
 		System.out.println();
 	}
@@ -244,7 +329,7 @@ public class CommonUtils
 		Integer iOption = 0;
 
 		System.out.println();
-		System.out.println(ANSI_BLUE +  title);
+		System.out.println(blue() +  title);
 
 		ArrayList<String> validOptions = new ArrayList<String>();
         for (String key: options.keySet()) {
@@ -270,7 +355,7 @@ public class CommonUtils
 			iOption = Integer.parseInt(option) - 1;
 			desc = options.get( option );
 		}
-		System.out.println("You selected : " + ANSI_GREEN + desc + ANSI_BLACK);
+		System.out.println("You selected : " + green() + desc + black());
 		return iOption;
 	}
 
@@ -287,10 +372,10 @@ public class CommonUtils
 
     public void displayThing(DBObject doc) {
         if (doc == null) {
-            System.out.println(ANSI_BLUE + "{\n}" + ANSI_BLACK);
+            System.out.println(blue() + "{\n}" + black());
             return;
         }
-        System.out.println(ANSI_BLUE + "{" + ANSI_BLACK );
+        System.out.println(blue() + "{" + black() );
         Iterator<Map.Entry<String,Object>> it = ((BasicDBObject) doc).entrySet().iterator();
 
         //calculate max length
@@ -316,24 +401,24 @@ public class CommonUtils
             if (field.getValue().getClass().equals(BasicDBObject.class)) {
                 String pad = maxpad+field.getKey();
                 pad = pad.substring(pad.length()-maxlength, pad.length());
-                System.out.println(ANSI_BLACK + pad + ANSI_BLACK + ": {" );
+                System.out.println(black() + pad + black() + ": {" );
                 Iterator<Map.Entry<String,Object>> itTwo = ((BasicDBObject) field.getValue() ).entrySet().iterator();
                 while (itTwo.hasNext()) {
                     Map.Entry<String,Object> fieldTwo;
                     fieldTwo = itTwo.next();
                     //if (fieldTwo.getValue().getClass().equals(String.class)) {
-                    System.out.println(maxpad + "  " + ANSI_BLACK + fieldTwo.getKey() + ANSI_BLACK + ": " + ANSI_BLUE + fieldTwo.getValue() + ANSI_BLACK);
+                    System.out.println(maxpad + "  " + black() + fieldTwo.getKey() + black() + ": " + blue() + fieldTwo.getValue() + black());
 
                 }
-                System.out.println(ANSI_BLACK + String.format("%"+maxlength+"s", " ") + ANSI_BLACK + "}" );
+                System.out.println(black() + String.format("%"+maxlength+"s", " ") + black() + "}" );
             } else {
                 String pad = String.format("%"+maxlength+"s", " ")+field.getKey();
                 pad = pad.substring(pad.length()-maxlength, pad.length());
-                System.out.println(ANSI_BLACK + pad + ANSI_BLACK + ": " + ANSI_BLUE + field.getValue() + ANSI_BLACK);
+                System.out.println(black() + pad + black() + ": " + blue() + field.getValue() + black());
             }
 
         }
-        System.out.println(ANSI_BLUE + "}" + ANSI_BLACK );
+        System.out.println(blue() + "}" + black() );
     }
 
 	public void diffThings(DBObject newDoc, DBObject oldDoc) {
@@ -346,7 +431,7 @@ public class CommonUtils
 			System.out.println("thing does not exists!");
 			return;
 		}
-		System.out.println(ANSI_BLUE + "{" + ANSI_BLACK );
+		System.out.println(blue() + "{" + black() );
 		Iterator<Map.Entry<String,Object>> it = ((BasicDBObject) newDoc).entrySet().iterator();
 
 		//calculate max length
@@ -370,12 +455,12 @@ public class CommonUtils
 			if (field.getValue().getClass().equals(BasicDBObject.class)) {
 				String pad = maxpad+field.getKey();
 				pad = pad.substring(pad.length()-maxlength, pad.length());
-				System.out.println(ANSI_BLACK + pad + ANSI_BLACK + ": {" );
+				System.out.println(black() + pad + black() + ": {" );
 				Iterator<Map.Entry<String,Object>> itTwo = ((BasicDBObject) field.getValue() ).entrySet().iterator();
 				while (itTwo.hasNext()) {
 					Map.Entry<String,Object> fieldTwo;
 					fieldTwo = itTwo.next();
-					System.out.println(maxpad + "  " + ANSI_BLACK + fieldTwo.getKey() + ANSI_BLACK + ": " + ANSI_BLUE + fieldTwo.getValue() + ANSI_BLACK);
+					System.out.println(maxpad + "  " + black() + fieldTwo.getKey() + black() + ": " + blue() + fieldTwo.getValue() + black());
 
 					if (oldDoc != null && (DBObject)oldDoc.get(field.getKey()) != null) {
 						DBObject oldField = (DBObject) oldDoc.get(field.getKey());
@@ -383,26 +468,26 @@ public class CommonUtils
 						if (oldFieldTwo != null && !oldFieldTwo.equals(fieldTwo.getValue())) {
 							pad = maxpad + "<old value>";
 							pad = pad.substring(pad.length() - maxlength, pad.length());
-							System.out.println(" " + ANSI_GREEN + pad + " " + ANSI_BLACK + fieldTwo.getKey() + ": " + ANSI_BLUE + oldFieldTwo + ANSI_BLACK);
+							System.out.println(" " + green() + pad + " " + black() + fieldTwo.getKey() + ": " + blue() + oldFieldTwo + black());
 						}
 					}
 				}
-				System.out.println(ANSI_BLACK + String.format("%"+maxlength+"s", " ") + ANSI_BLACK + "}" );
+				System.out.println(black() + String.format("%"+maxlength+"s", " ") + black() + "}" );
 			} else {
 				String pad = String.format("%" + maxlength + "s", " ")+field.getKey();
 				pad = pad.substring(pad.length()-maxlength, pad.length());
-				System.out.println(ANSI_BLACK + pad + ANSI_BLACK + ": " + ANSI_BLUE + field.getValue() + ANSI_BLACK);
+				System.out.println(black() + pad + black() + ": " + blue() + field.getValue() + black());
 				if (oldDoc != null && oldDoc.get(field.getKey()) != null) {
 					Object oldField = oldDoc.get(field.getKey());
 					if (!oldField.equals(field.getValue())) {
 						pad = String.format("%" + maxlength + "s", " ") + "<old value>";
 						pad = pad.substring(pad.length() - maxlength, pad.length());
-						System.out.println(ANSI_GREEN + pad + ANSI_BLACK + ": " + ANSI_BLUE + oldField + ANSI_BLACK);
+						System.out.println(green() + pad + black() + ": " + blue() + oldField + black());
 					}
 				}
 			}
 		}
-		System.out.println(ANSI_BLUE + "}" + ANSI_BLACK );
+		System.out.println(blue() + "}" + black() );
 
 	}
 
@@ -450,7 +535,7 @@ public class CommonUtils
 		Scanner in;
 		in = new Scanner( System.in );
 
-		System.out.print( ANSI_BLACK + "\n" + title + "[" + ANSI_GREEN + value + ANSI_BLACK + "]:" );
+		System.out.print( black() + "\n" + title + "[" + green() + value + black() + "]:" );
 		String tagIn = in.nextLine();
 		if( tagIn.equals( "" ) )
 		{
@@ -492,7 +577,7 @@ public class CommonUtils
 				res = mapper.readValue(resp, typeRef);
 				//System.out.println("Got " + res);
 			} catch (Exception e) {
-
+				e.printStackTrace();
 			}
 		}
 		finally
@@ -575,11 +660,11 @@ public class CommonUtils
 		}
 		catch(MqttException me)
 		{
-			System.out.println("reason " + ANSI_RED + me.getReasonCode() + ANSI_BLACK);
+			System.out.println("reason " + red() + me.getReasonCode() + black());
 			System.out.println("msg " + me.getMessage() );
 		} catch(Exception e)
 		{
-			System.out.println("msg " + ANSI_RED + e.getMessage() + ANSI_BLACK);
+			System.out.println("msg " + red() + e.getMessage() + black());
 		}
 	}
 
@@ -593,13 +678,13 @@ public class CommonUtils
 
 			if (res.containsKey( "error" ) )
 			{
-				System.out.println( ANSI_RED + res.get("error") + ANSI_BLACK);
+				System.out.println( red() + res.get("error") + black());
 			}
 			else
 			{
 				System.out.println( res);
 				//send a tickle to update corebridge
-				System.out.println( ANSI_BLUE + "send a tickle to update corebridge" + ANSI_BLUE);
+				System.out.println( blue() + "send a tickle to update corebridge" + blue());
 				sleep( 500 );
 
 				String topic = "/v1/edge/dn/_ALL_/update/thingTypes";

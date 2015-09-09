@@ -12,6 +12,7 @@ import com.tierconnect.dev.controllerInterface;
 import com.tierconnect.utils.CommonUtils;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Scanner;
 
 /**
@@ -94,7 +95,7 @@ public class fixSharaf  implements controllerInterface {
 
 	public void execute() {
 		setup();
-		HashMap<String, String> options = new HashMap<String,String>();
+		HashMap<String, String> options = new LinkedHashMap<String,String>();
 
 		options.put("1", "execute query to get Thing with the issue");
 		options.put("2", "fix ");
@@ -110,7 +111,7 @@ public class fixSharaf  implements controllerInterface {
 					fixThingsWithIssue();
 				}
 
-				System.out.println(cu.ANSI_BLACK +  "\npress [enter] to continue");
+				System.out.println(cu.black() +  "\npress [enter] to continue");
 				Scanner in = new Scanner(System.in);
 				in.nextLine();
 			}

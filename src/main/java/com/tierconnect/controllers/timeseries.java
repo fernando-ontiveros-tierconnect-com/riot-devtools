@@ -29,6 +29,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -411,6 +412,8 @@ public class timeseries  implements controllerInterface
 
 		outputReport = cu.prompt( "enter Output Report Collection ", "" + outputReport );
 		executeDenseTimeserieReport( outputReport, dateReport );
+
+
 	}
 
 	private void sparseTimeserieReport()
@@ -850,7 +853,7 @@ public class timeseries  implements controllerInterface
 
 	public void execute() {
 		setup();
-		HashMap<String, String> options = new HashMap<String,String>();
+		HashMap<String, String> options = new LinkedHashMap<String,String>();
 
 		options.put("1", "Dense timeserie report");
 		options.put("2", "Sparse timeserie report");
@@ -874,7 +877,7 @@ public class timeseries  implements controllerInterface
 					importTimeseries();
 				}
 
-				System.out.println(cu.ANSI_BLACK +  "\npress [enter] to continue");
+				System.out.println(cu.black() +  "\npress [enter] to continue");
 				Scanner in = new Scanner(System.in);
 				in.nextLine();
 			}

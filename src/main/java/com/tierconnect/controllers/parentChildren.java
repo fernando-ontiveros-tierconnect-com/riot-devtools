@@ -11,7 +11,6 @@ import com.mongodb.MapReduceCommand;
 import com.mongodb.MapReduceOutput;
 import com.tierconnect.dev.controllerInterface;
 import com.tierconnect.utils.CommonUtils;
-import com.tierconnect.utils.MqttUtils;
 import com.tierconnect.utils.TimerUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPatch;
@@ -62,8 +61,6 @@ public class parentChildren implements controllerInterface
 	String thingField    = "status";
 	String thingFieldJSON = "shifts";
 
-	MqttUtils mq;
-
 	public void setCu(CommonUtils cu) {
 		this.cu = cu;
 	}
@@ -79,7 +76,7 @@ public class parentChildren implements controllerInterface
 		thingsCollection        = cu.db.getCollection("things");
 		outputCollection        = cu.db.getCollection("mr_reusableTag");
 
-		mq = new MqttUtils( "localhost", 1883);
+		cu.defaultMqttConnection();
 
 	}
 
@@ -271,17 +268,18 @@ public class parentChildren implements controllerInterface
 	public void createThingTypes() {
 		HashMap<String,Object> res;
 		try {
+
 			String body = read("/forkliftParent.txt");
-			res = httpPutMessage("http://localhost:8080/riot-core-services/api/thingType", body);
+			res = httpPutMessage(cu.servicesApi + "thingType", body);
 			Long parentId = Long.parseLong(res.get("id").toString());
 
 			String children1 = read("/forkliftChildren1.txt");
 			children1 = children1.replace("PARENT_ID", parentId.toString());
-			httpPutMessage( "http://localhost:8080/riot-core-services/api/thingType", children1 );
+			httpPutMessage( cu.servicesApi + "thingType", children1 );
 
 			String children2 = read("/forkliftChildren2.txt");
 			children2 = children2.replaceAll("PARENT_ID", parentId.toString());
-			httpPutMessage("http://localhost:8080/riot-core-services/api/thingType", children2);
+			httpPutMessage(cu.servicesApi + "thingType", children2);
 
 		} catch (Exception e) {
 			System.out.println(e.getCause());
@@ -454,7 +452,7 @@ public class parentChildren implements controllerInterface
 				msg += serial1 + "," + time + ",status," + getRandomStatus() + "\n";
 				msg += serial1 + "," + time + ",usage," + getRandomUsage() + "\n";
 			}
-			mq.publishSyncMessage(topic, msg);
+			cu.publishSyncMessage(topic, msg);
 			cu.sleep(100 );
 
 			//the first thing
@@ -475,8 +473,8 @@ public class parentChildren implements controllerInterface
 				msg += serial2 + "," + time + ",lastLocateTime,1436985931348\n";
 				msg += serial2 + "," + time + ",lastDetectTime,1436985931348\n";
 			}
-			mq.publishSyncMessage(topic, msg);
-			cu.sleep(100 );
+			cu.publishSyncMessage(topic, msg);
+			cu.sleep( 100 );
 
 			//the third thing
 			serialNumber = baseSerial - 1;
@@ -495,7 +493,7 @@ public class parentChildren implements controllerInterface
 				msg += serial3 + "," + time + ",lastLocateTime,1436985931348\n";
 				msg += serial3 + "," + time + ",lastDetectTime,1436985931348\n";
 			}
-			mq.publishSyncMessage(topic, msg);
+			cu.publishSyncMessage(topic, msg);
 			cu.sleep(100);
 
 			created += thingsPerMessage*3;
@@ -560,8 +558,8 @@ public class parentChildren implements controllerInterface
 			msg.append(serialNumber + "," + time + ",logicalReader,LR" + r.nextInt(10) + "\n");
 			msg.append(serialNumber + "," + time + ",lastDetectTime," + time + "\n");
 		}
-		mq.publishSyncMessage(topic, msg.toString());
-		if(delayBetweenThings > 0)
+		cu.publishSyncMessage(topic, msg.toString());
+		if( delayBetweenThings > 0)
 		{
 			cu.sleep( delayBetweenThings );
 		}
@@ -584,7 +582,7 @@ public class parentChildren implements controllerInterface
 
 		delayBetweenThings = Integer.parseInt( cu.prompt( "How many ms beetween each blink?", "" + delayBetweenThings ) );
 
-		System.out.print(cu.ANSI_BLACK + "\nChanging " + thingsToChange + " things with a delay of " + delayBetweenThings + " ms.");
+		System.out.print(cu.black() + "\nChanging " + thingsToChange + " things with a delay of " + delayBetweenThings + " ms.");
 
 		//get the max number of _id
 		Long maxId = 0L;
@@ -695,7 +693,7 @@ public class parentChildren implements controllerInterface
 					cursor.close();
 				}
 			}
-			mq.publishSyncMessage( topic, msg.toString() );
+			cu.publishSyncMessage( topic, msg.toString() );
 			cu.sleep( delayBetweenThings );
 
 		}
@@ -710,7 +708,7 @@ public class parentChildren implements controllerInterface
 		Long thingsToChange = 0L;
 		Integer delayBetweenThings = 10;
 
-		System.out.print(cu.ANSI_BLACK + "\nserialNumber[" + cu.ANSI_GREEN + lastSerialNumber + cu.ANSI_BLACK + "]:");
+		System.out.print(cu.black() + "\nserialNumber[" + cu.green() + lastSerialNumber + cu.black() + "]:");
 		String tagIn = in.nextLine();
 		if (tagIn.equals("")) {
 			tagIn = lastSerialNumber;
@@ -721,7 +719,7 @@ public class parentChildren implements controllerInterface
 		String serialNumber = castSerialNumber(Long.parseLong( tagIn ));
         lastSerialNumber = serialNumber;
 
-		System.out.print(cu.ANSI_BLACK + "\nChanging the thing " + serialNumber );
+		System.out.print(cu.black() + "\nChanging the thing " + serialNumber );
 
 		//get the max number of _id
 		Long maxId = 0L;
@@ -776,7 +774,7 @@ public class parentChildren implements controllerInterface
 					changeOneThing();
 				}
 
-				System.out.println(cu.ANSI_BLACK +  "\npress [enter] to continue");
+				System.out.println(cu.black() +  "\npress [enter] to continue");
 				Scanner in = new Scanner(System.in);
 				in.nextLine();
 			}

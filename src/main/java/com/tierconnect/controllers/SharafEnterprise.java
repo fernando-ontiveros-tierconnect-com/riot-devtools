@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Scanner;
@@ -363,7 +364,7 @@ public class SharafEnterprise implements controllerInterface
 
 		thingsPerBlink = Integer.parseInt( cu.prompt( "How many things in each blink message?", "" + thingsPerBlink ) );
 
-		System.out.print(cu.ANSI_BLACK + "\nChanging " + thingsToChange + " things with a delay of " + delayBetweenThings + " ms.");
+		System.out.print(cu.black() + "\nChanging " + thingsToChange + " things with a delay of " + delayBetweenThings + " ms.");
 
 		//get the max number of _id
 		Long maxId = 0L;
@@ -423,7 +424,7 @@ public class SharafEnterprise implements controllerInterface
 	public void execute() {
 		setup();
 
-		HashMap<String, String> options = new HashMap<String,String>();
+		HashMap<String, String> options = new LinkedHashMap<String,String>();
 
 		options.put("1", "create sharafRFI ThingType");
 		options.put("2", "create Things for SharafRFID");
@@ -444,7 +445,7 @@ public class SharafEnterprise implements controllerInterface
 					changeThings();
 				}
 
-				System.out.println(cu.ANSI_BLACK +  "\npress [enter] to continue");
+				System.out.println(cu.black() +  "\npress [enter] to continue");
 				Scanner in = new Scanner(System.in);
 				in.nextLine();
 			}

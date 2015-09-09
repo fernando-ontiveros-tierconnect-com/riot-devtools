@@ -18,14 +18,6 @@ public class Main {
 	CommonUtils cu;
 	ArrayList<controllerInterface> controllers = new ArrayList<controllerInterface>();
 
-	final String ANSI_RESET = "\u001B[0m";
-	final String ANSI_BLACK = "\u001B[30m";
-	final String ANSI_RED   = "\u001B[31m";
-	final String ANSI_GREEN = "\u001B[32m";
-	final String ANSI_BLUE  = "\u001B[34m";
-	final String ANSI_CLEAR = "\u001B[2J";
-	final String ANSI_EOF   = "\u001B[K";
-
 	//batch size
 	int batch_row_size;
 
@@ -86,9 +78,9 @@ public class Main {
 
 	public void showItemMenu(String i, String option)
 	{
-		System.out.print(ANSI_RED);
+		System.out.print(cu.red());
 		System.out.print(i +". ");
-		System.out.print(ANSI_BLACK);
+		System.out.print(cu.black());
 		System.out.print(option);
 		System.out.println();
 	}
@@ -113,7 +105,7 @@ public class Main {
 		ArrayList<String> options = new ArrayList<String>();
 
 		System.out.println();
-		System.out.println(ANSI_BLUE +  "Main Menu");
+		System.out.println(cu.blue() +  "Main Menu");
 
 		options.add("x");
 
@@ -140,7 +132,7 @@ public class Main {
 			iOption = Integer.parseInt(option) -1;
 			desc = controllers.get( iOption ).getDescription();
 		}
-		System.out.println("You selected : " + ANSI_GREEN + desc + ANSI_BLACK);
+		System.out.println("You selected : " + cu.green() + desc + cu.black());
 		return iOption;
 	}
 

@@ -16,8 +16,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -28,14 +28,9 @@ public class nativeObjects implements controllerInterface
 {
 	CommonUtils cu;
 	String lastSerialNumber = "000000000000000010000";
-	String lastQuantity = "10000";
-	Integer lastPosx = 0;
-	Integer lastPosy = 0;
 
 	Long sequenceNumber = 0L;
 	Long serialNumber = 200L;
-	Long errores = 0L;
-	Long created = 0L;
 
 	DBCollection thingsCollection;
 	DBCollection outputCollection;
@@ -46,7 +41,6 @@ public class nativeObjects implements controllerInterface
 	String multipleThingTypeCode = "Native.Objects.Multiple";
 	String defaultRfidThingTypeCode = "default_rfid_thingtype";
 	String statusThingField = "status";
-	String categoryThingField = "category";
 	String logicalReaderField = "logicalReader";
 	String multipleLogicalReaderField = "multiLogicalReader";
 	String zoneField = "zone";
@@ -76,13 +70,7 @@ public class nativeObjects implements controllerInterface
 		thingsCollection = cu.db.getCollection( "things" );
 		outputCollection = cu.db.getCollection( "mr_reusableTag" );
 
-		//ToDo: improve this
-		Properties prop = cu.readConfigFile();
-		String broker = prop.getProperty( "mqtt.broker" );
-		String clientId = prop.getProperty( "mqtt.clientId" );
-		int qos = Integer.parseInt( prop.getProperty( "mqtt.qos" ) );
-
-	    cu.setupMqtt(broker, clientId, qos, null, null);
+		cu.defaultMqttConnection();
 	}
 
 	public void createThingTypes() {
@@ -95,7 +83,7 @@ public class nativeObjects implements controllerInterface
 		HashMap<String,Object> res;
 
 		try {
-			System.out.println( cu.ANSI_BLUE + "creating logical readers for tests" + cu.ANSI_BLACK);
+			System.out.println( cu.blue() + "creating logical readers for tests" + cu.black());
 
 			String body = cu.read( "/coreServices/logicalReader.txt" );
 
@@ -116,7 +104,7 @@ public class nativeObjects implements controllerInterface
 				cu.httpPutMessage( "logicalReader", jsonFromMap);
 			}
 
-			System.out.println( cu.ANSI_BLUE + "creating Shifts for tests" + cu.ANSI_BLACK);
+			System.out.println( cu.blue() + "creating Shifts for tests" + cu.black());
 
 			body = cu.read( "/coreServices/shift.txt" );
 
@@ -189,7 +177,7 @@ public class nativeObjects implements controllerInterface
 		Long thingsToChange = 0L;
 		Integer delayBetweenThings = 10;
 
-		System.out.print( cu.ANSI_BLACK + "\nHow many things wants to change?[" + cu.ANSI_GREEN + "1000" + cu.ANSI_BLACK + "]:" );
+		System.out.print( cu.black() + "\nHow many things wants to change?[" + cu.green() + "1000" + cu.black() + "]:" );
 		String tagIn = in.nextLine();
 		if( tagIn.equals( "" ) )
 		{
@@ -201,7 +189,7 @@ public class nativeObjects implements controllerInterface
 		}
 		thingsToChange = Long.parseLong( tagIn );
 
-		System.out.print( cu.ANSI_BLACK + "\nHow many miliseconds (ms) between each blink ?[" + cu.ANSI_GREEN + delayBetweenThings + cu.ANSI_BLACK + "]:" );
+		System.out.print( cu.black() + "\nHow many miliseconds (ms) between each blink ?[" + cu.green() + delayBetweenThings + cu.black() + "]:" );
 		tagIn = in.nextLine();
 		if( tagIn.equals( "" ) )
 		{
@@ -212,7 +200,7 @@ public class nativeObjects implements controllerInterface
 			delayBetweenThings = Integer.parseInt( tagIn );
 		}
 
-		System.out.print( cu.ANSI_BLACK + "\nChanging " + thingsToChange + " things with a delay of " + delayBetweenThings + " ms." );
+		System.out.print( cu.black() + "\nChanging " + thingsToChange + " things with a delay of " + delayBetweenThings + " ms." );
 
 		//get the max number of _id
 		Long maxId = 0L;
@@ -278,7 +266,7 @@ public class nativeObjects implements controllerInterface
 		Long thingsToChange = 0L;
 		Integer delayBetweenThings = 10;
 
-		System.out.print( cu.ANSI_BLACK + "\nserialNumber[" + cu.ANSI_GREEN + lastSerialNumber + cu.ANSI_BLACK + "]:" );
+		System.out.print( cu.black() + "\nserialNumber[" + cu.green() + lastSerialNumber + cu.black() + "]:" );
 		String tagIn = in.nextLine();
 		if( tagIn.equals( "" ) )
 		{
@@ -292,7 +280,7 @@ public class nativeObjects implements controllerInterface
 		String serialNumber = castSerialNumber( Long.parseLong( tagIn ) );
 		lastSerialNumber = serialNumber;
 
-		System.out.print( cu.ANSI_BLACK + "\nChanging the thing " + serialNumber );
+		System.out.print( cu.black() + "\nChanging the thing " + serialNumber );
 
 		//get the max number of _id
 		Long maxId = 0L;
@@ -353,10 +341,10 @@ public class nativeObjects implements controllerInterface
 
 		sb.append( serialNumber + "," + time + "," + statusThingField + "," + "\"" + commaValue + "\"\n" );
 
-		System.out.println( " serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "" );
-		System.out.println( "thingTypeCode: " + cu.ANSI_BLUE + defaultRfidThingTypeCode + cu.ANSI_BLACK + "" );
-		System.out.println( "        field: " + cu.ANSI_BLUE + statusThingField + cu.ANSI_BLACK + "" );
-		System.out.println( "        value: " + cu.ANSI_BLUE + commaValue + cu.ANSI_BLACK + "" );
+		System.out.println( " serialNumber: " + cu.blue() + serialNumber + cu.black() + "" );
+		System.out.println( "thingTypeCode: " + cu.blue() + defaultRfidThingTypeCode + cu.black() + "" );
+		System.out.println( "        field: " + cu.blue() + statusThingField + cu.black() + "" );
+		System.out.println( "        value: " + cu.blue() + commaValue + cu.black() + "" );
 
 		DBObject prevThing = cu.getThing( serialNumber, defaultRfidThingTypeCode );
 
@@ -468,10 +456,10 @@ public class nativeObjects implements controllerInterface
 
 		sb.append( serialNumber + "," + time + "," + logicalReaderField + "," + "\"" + lrValue + "\"\n" );
 
-		System.out.println( " serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "" );
-		System.out.println( "thingTypeCode: " + cu.ANSI_BLUE + defaultRfidThingTypeCode + cu.ANSI_BLACK + "" );
-		System.out.println( "        field: " + cu.ANSI_BLUE + logicalReaderField + cu.ANSI_BLACK + "" );
-		System.out.println( "        value: " + cu.ANSI_BLUE + lrValue + cu.ANSI_BLACK + "" );
+		System.out.println( " serialNumber: " + cu.blue() + serialNumber + cu.black() + "" );
+		System.out.println( "thingTypeCode: " + cu.blue() + defaultRfidThingTypeCode + cu.black() + "" );
+		System.out.println( "        field: " + cu.blue() + logicalReaderField + cu.black() + "" );
+		System.out.println( "        value: " + cu.blue() + lrValue + cu.black() + "" );
 
 		DBObject prevThing = cu.getThing( serialNumber, defaultRfidThingTypeCode );
 
@@ -510,10 +498,10 @@ public class nativeObjects implements controllerInterface
 
 		sb.append( serialNumber + "," + time + "," + multipleLogicalReaderField + "," + "\"" + lrValue + "\"\n" );
 
-		System.out.println( " serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "" );
-		System.out.println( "thingTypeCode: " + cu.ANSI_BLUE + multipleThingTypeCode + cu.ANSI_BLACK + "" );
-		System.out.println( "        field: " + cu.ANSI_BLUE + multipleLogicalReaderField + cu.ANSI_BLACK + "" );
-		System.out.println( "        value: " + cu.ANSI_BLUE + lrValue + cu.ANSI_BLACK + "" );
+		System.out.println( " serialNumber: " + cu.blue() + serialNumber + cu.black() + "" );
+		System.out.println( "thingTypeCode: " + cu.blue() + multipleThingTypeCode + cu.black() + "" );
+		System.out.println( "        field: " + cu.blue() + multipleLogicalReaderField + cu.black() + "" );
+		System.out.println( "        value: " + cu.blue() + lrValue + cu.black() + "" );
 
 		DBObject prevThing = cu.getThing( serialNumber, multipleThingTypeCode );
 
@@ -625,10 +613,10 @@ public class nativeObjects implements controllerInterface
 
 		sb.append( serialNumber + "," + time + "," + zoneField + "," + "\"" + zoneValue + "\"\n" );
 
-		System.out.println( " serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "" );
-		System.out.println( "thingTypeCode: " + cu.ANSI_BLUE + defaultRfidThingTypeCode + cu.ANSI_BLACK + "" );
-		System.out.println( "        field: " + cu.ANSI_BLUE + zoneField + cu.ANSI_BLACK + "" );
-		System.out.println( "        value: " + cu.ANSI_BLUE + zoneValue + cu.ANSI_BLACK + "" );
+		System.out.println( " serialNumber: " + cu.blue() + serialNumber + cu.black() + "" );
+		System.out.println( "thingTypeCode: " + cu.blue() + defaultRfidThingTypeCode + cu.black() + "" );
+		System.out.println( "        field: " + cu.blue() + zoneField + cu.black() + "" );
+		System.out.println( "        value: " + cu.blue() + zoneValue + cu.black() + "" );
 
 		DBObject prevThing = cu.getThing( serialNumber, defaultRfidThingTypeCode );
 
@@ -666,10 +654,10 @@ public class nativeObjects implements controllerInterface
 
 		sb.append( serialNumber + "," + time + "," + multiplezoneField + "," + "\"" + zoneValue + "\"\n" );
 
-		System.out.println( " serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "" );
-		System.out.println( "thingTypeCode: " + cu.ANSI_BLUE + multipleThingTypeCode + cu.ANSI_BLACK + "" );
-		System.out.println( "        field: " + cu.ANSI_BLUE + multiplezoneField + cu.ANSI_BLACK + "" );
-		System.out.println( "        value: " + cu.ANSI_BLUE + zoneValue + cu.ANSI_BLACK + "" );
+		System.out.println( " serialNumber: " + cu.blue() + serialNumber + cu.black() + "" );
+		System.out.println( "thingTypeCode: " + cu.blue() + multipleThingTypeCode + cu.black() + "" );
+		System.out.println( "        field: " + cu.blue() + multiplezoneField + cu.black() + "" );
+		System.out.println( "        value: " + cu.blue() + zoneValue + cu.black() + "" );
 
 		DBObject prevThing = cu.getThing( serialNumber, multipleThingTypeCode );
 
@@ -779,10 +767,10 @@ public class nativeObjects implements controllerInterface
 
 		sb.append( serialNumber + "," + time + "," + shiftField + "," + "\"" + shiftValue + "\"\n" );
 
-		System.out.println( " serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "" );
-		System.out.println( "thingTypeCode: " + cu.ANSI_BLUE + defaultRfidThingTypeCode + cu.ANSI_BLACK + "" );
-		System.out.println( "        field: " + cu.ANSI_BLUE + shiftField + cu.ANSI_BLACK + "" );
-		System.out.println( "        value: " + cu.ANSI_BLUE + shiftValue + cu.ANSI_BLACK + "" );
+		System.out.println( " serialNumber: " + cu.blue() + serialNumber + cu.black() + "" );
+		System.out.println( "thingTypeCode: " + cu.blue() + defaultRfidThingTypeCode + cu.black() + "" );
+		System.out.println( "        field: " + cu.blue() + shiftField + cu.black() + "" );
+		System.out.println( "        value: " + cu.blue() + shiftValue + cu.black() + "" );
 
 		DBObject prevThing = cu.getThing( serialNumber, defaultRfidThingTypeCode );
 
@@ -819,10 +807,10 @@ public class nativeObjects implements controllerInterface
 
 		sb.append( serialNumber + "," + time + "," + multipleshiftField + "," + "\"" + shiftValue + "\"\n" );
 
-		System.out.println( " serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "" );
-		System.out.println( "thingTypeCode: " + cu.ANSI_BLUE + multipleThingTypeCode + cu.ANSI_BLACK + "" );
-		System.out.println( "        field: " + cu.ANSI_BLUE + multipleshiftField + cu.ANSI_BLACK + "" );
-		System.out.println( "        value: " + cu.ANSI_BLUE + shiftValue + cu.ANSI_BLACK + "" );
+		System.out.println( " serialNumber: " + cu.blue() + serialNumber + cu.black() + "" );
+		System.out.println( "thingTypeCode: " + cu.blue() + multipleThingTypeCode + cu.black() + "" );
+		System.out.println( "        field: " + cu.blue() + multipleshiftField + cu.black() + "" );
+		System.out.println( "        value: " + cu.blue() + shiftValue + cu.black() + "" );
 
 		DBObject prevThing = cu.getThing( serialNumber, multipleThingTypeCode );
 
@@ -899,10 +887,10 @@ public class nativeObjects implements controllerInterface
 		sb.append(serialNumber + "," + time + "," + thingFieldJSON + "," + "\"" + jsonStr.toString() + "\"\n");
 
 
-		System.out.println(" serialNumber: " + cu.ANSI_BLUE + serialNumber + cu.ANSI_BLACK + "");
-		System.out.println("thingTypeCode: " + cu.ANSI_BLUE + thingTypeCode + cu.ANSI_BLACK + "");
-		System.out.println("        field: " + cu.ANSI_BLUE + thingFieldJSON + cu.ANSI_BLACK + "");
-		System.out.println("        value: " + cu.ANSI_BLUE + jsonStr.toString() + cu.ANSI_BLACK + "");
+		System.out.println(" serialNumber: " + cu.blue() + serialNumber + cu.black() + "");
+		System.out.println("thingTypeCode: " + cu.blue() + thingTypeCode + cu.black() + "");
+		System.out.println("        field: " + cu.blue() + thingFieldJSON + cu.black() + "");
+		System.out.println("        value: " + cu.blue() + jsonStr.toString() + cu.black() + "");
 
 		DBObject prevThing = cu.getThing( serialNumber, thingTypeCode );
 
@@ -915,7 +903,7 @@ public class nativeObjects implements controllerInterface
 
 	public void execute() {
 		setup();
-		HashMap<String, String> options = new HashMap<String,String>();
+		HashMap<String, String> options = new LinkedHashMap<String,String>();
 
 		options.put("1", "create ThingTypes");
 		options.put("2", "send a CSV (comma separate values) to udf");
@@ -967,7 +955,7 @@ public class nativeObjects implements controllerInterface
 				//	sendJSONBlink();
 				//}
 
-				System.out.println(cu.ANSI_BLACK +  "\npress [enter] to continue");
+				System.out.println(cu.black() +  "\npress [enter] to continue");
 				Scanner in = new Scanner(System.in);
 				in.nextLine();
 			}

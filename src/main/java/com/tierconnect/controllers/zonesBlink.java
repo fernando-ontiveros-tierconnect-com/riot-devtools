@@ -1,6 +1,5 @@
 package com.tierconnect.controllers;
 
-import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
 import com.tierconnect.dev.controllerInterface;
@@ -14,6 +13,7 @@ import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -27,7 +27,6 @@ public class zonesBlink  implements controllerInterface {
 	String thingTypeCode = "default_rfid_thingtype";
 
 	DBCollection thingsCollection;
-	BasicDBObject docs[];
 
 	public void setCu(CommonUtils cu) {
 		this.cu = cu;
@@ -85,9 +84,9 @@ public class zonesBlink  implements controllerInterface {
 		sb.append("CS,-118.443969,34.048092,0.0,20.0,ft\n");
 		sb.append("LOC, 00:00:00," + tag + "," + posx + "," + posy + ",0," + lr + ",x3ed9371\n");
 
-		System.out.println("serialNumber: " + cu.ANSI_BLUE + tag + cu.ANSI_BLACK + "");
-		System.out.println("   locationX: " + cu.ANSI_BLUE + posx + cu.ANSI_BLACK + "");
-		System.out.println("   locationY: " + cu.ANSI_BLUE + posy + cu.ANSI_BLACK + "");
+		System.out.println("serialNumber: " + cu.blue() + tag + cu.black() + "");
+		System.out.println("   locationX: " + cu.blue() + posx + cu.black() + "");
+		System.out.println("   locationY: " + cu.blue() + posy + cu.black() + "");
 
 		DBObject prevThing = cu.getThing(tag, thingTypeCode);
 
@@ -109,9 +108,9 @@ public class zonesBlink  implements controllerInterface {
 			aleXmlMessage = new ALEXMLMessage();
 			aleXmlMessage.run( new ByteArrayInputStream(sb.toString().getBytes()), (OutputStream) output);
 			//aleXmlMessage.run( System.in, System.out );
-			System.out.println("AleXML generated a " + cu.ANSI_BLUE + output.toString().length() + cu.ANSI_BLACK + " bytes message");
+			System.out.println("AleXML generated a " + cu.blue() + output.toString().length() + cu.black() + " bytes message");
 
-			String[] args = {""};
+			String[] args = {"-h" , cu.aleHost, "-p", cu.alePort };
 			ALEPost alep = new ALEPost( args );
 			alep.run( new ByteArrayInputStream(output.toString().getBytes()) );
 
@@ -133,7 +132,7 @@ public class zonesBlink  implements controllerInterface {
 
 	public void execute() {
 		setup();
-		HashMap<String, String> options = new HashMap<String,String>();
+		HashMap<String, String> options = new LinkedHashMap<String,String>();
 
 		options.put("1", "send 000000000000000000100 to Stockroom");
 		options.put("2", "send 000000000000000000100 to Salesfloor");
@@ -173,7 +172,7 @@ public class zonesBlink  implements controllerInterface {
 					sendZoneBlink(null, "Entrance");
 				}
 
-				System.out.println(cu.ANSI_BLACK +  "\npress [enter] to continue");
+				System.out.println(cu.black() +  "\npress [enter] to continue");
 				Scanner in = new Scanner(System.in);
 				in.nextLine();
 			}
