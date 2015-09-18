@@ -436,8 +436,8 @@ public class nativeObjects implements controllerInterface
 
 		String serialNumber = "";
 
-		serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber", lastSerialNumber );
-		lastSerialNumber = serialNumber.substring( serialNumber.length() - 21, serialNumber.length() );
+		serialNumber = cu.prompt( "enter a serialNumber", lastSerialNumber );
+		lastSerialNumber = cu.formatSerialNumber(serialNumber);
 		serialNumber = lastSerialNumber;
 
 		defaultRfidThingTypeCode = cu.prompt( "enter the thingTypeCode", defaultRfidThingTypeCode );
@@ -907,12 +907,12 @@ public class nativeObjects implements controllerInterface
 
 		options.put("1", "create ThingTypes");
 		options.put("2", "send a CSV (comma separate values) to udf");
-		options.put("3", "send simple LogicalReader to Default RFID Thingtype");
-		options.put("4", "send simple Zone to Default RFID Thingtype");
-		options.put("5", "send simple Shift to Default RFID Thingtype");
-		options.put("6", "send multiple LogicalReader to Multiple Native Object");
-		options.put("7", "send multiple Zone to Multiple Native Object");
-		options.put("8", "send multiple Shift to Multiple Native Object");
+		options.put("3", "send simple LogicalReader");
+		options.put("4", "send simple Zone");
+		options.put("5", "send simple Shift");
+		options.put("6", "send multiple LogicalReader");
+		options.put("7", "send multiple Zone");
+		options.put("8", "send multiple Shift");
 		//options.put("9", "send a JSON to udf");
 
 		Integer option = 0;

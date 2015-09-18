@@ -510,7 +510,7 @@ public class parentChildren implements controllerInterface
 					StringBuilder sb = new StringBuilder( "" );
 					sb.append( "{ \"serialNumber\": \"" + castSerialNumber( baseSerial + i) + "\", ");
 					sb.append( "\"thingTypeCode\": \"forklift\", " );
-					sb.append( "\"groupName\" : \"Santa Monica\", " );
+					sb.append( "\"groupName\" : \">mojix>SM\", " );
 					sb.append( "\"name\" : \"" + castSerialNumber( baseSerial + i) +"\", " );
 					sb.append( "\"children\": [ " );
 					sb.append( "{" );

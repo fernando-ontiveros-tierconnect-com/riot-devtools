@@ -220,7 +220,7 @@ public class CommonUtils
 
 	public void setTitle( String title)
     {
-		String version = "";
+		String version = "1.0";
 
 		try
 		{
@@ -587,6 +587,18 @@ public class CommonUtils
 		}
 	}
 
+	public String formatSerialNumber ( String str)
+	{
+		try {
+			Long.valueOf( str );
+		} catch( NumberFormatException ne ) {
+			return str;
+		}
+
+		String serialNumber = "000000000000000000000";
+		return serialNumber.substring( serialNumber.length() - 21, serialNumber.length() );
+	}
+
 	public Long getSequenceNumber()
 	{
 		Long sequenceNumber = 0L;
@@ -826,37 +838,42 @@ public class CommonUtils
 
 		System.out.println ("+-------------------+----------+------------+------------+");
 
-		System.out.print( "|            things ");
-		re = thingsCollection.getStats();
-		strSize = alignRight( "" + (long)(Double.valueOf( re.get( "size" ).toString() ) / 1024 / 1024), 8, ' ' );
-		strIndex = alignRight( "" + (long)(Double.valueOf( re.get( "totalIndexSize" ).toString() ) / 1024 / 1024), 8, ' ' );
-		System.out.println( "|" + alignRight( thingsCollection.count() + "", 10, ' ' ) + "|" + strSize + " Mb.|" + strIndex + " Mb.|" );
-
-		re = thingSnapshots.getStats();
-		if (re.get("size") != null )
+		if (thingsCollection != null)
 		{
-			System.out.print( "|    thingSnapshots " );
-			strSize  = alignRight( "" + (long)(Double.valueOf( re.get( "size" ).toString() ) / 1024 / 1024), 8, ' ' );
-			strIndex = alignRight( "" + (long)(Double.valueOf( re.get( "totalIndexSize" ).toString() ) / 1024 / 1024), 8, ' ' );
-
-			System.out.println( "|" + alignRight( thingSnapshots.count() + "", 10, ' ' ) + "|" + strSize + " Mb.|" + strIndex + " Mb.|" );
+			System.out.print( "|            things " );
+			re = thingsCollection.getStats();
+			strSize = alignRight( "" + (long) (Double.valueOf( re.get( "size" ).toString() ) / 1024 / 1024), 8, ' ' );
+			strIndex = alignRight( "" + (long) (Double.valueOf( re.get( "totalIndexSize" ).toString() ) / 1024 / 1024), 8, ' ' );
+			System.out.println( "|" + alignRight( thingsCollection.count() + "", 10, ' ' ) + "|" + strSize + " Mb.|" + strIndex + " Mb.|" );
 		}
 
-		re = thingSnapshotIds.getStats();
-		if (re.get("size") != null )
+		if (thingSnapshots != null)
 		{
-			System.out.print( "|  thingSnapshotIds ");
-			strSize = alignRight( "" + (long)(Double.valueOf( re.get( "size" ).toString() ) / 1024 / 1024), 8, ' ' );
-			strIndex = alignRight( "" + (long)(Double.valueOf( re.get( "totalIndexSize" ).toString() ) / 1024 / 1024), 8, ' ' );
-			System.out.println( "|" + alignRight( thingSnapshotIds.count() + "", 10, ' ' ) + "|" + strSize + " Mb.|" + strIndex + " Mb.|" );
+			re = thingSnapshots.getStats();
+			if( re.get( "size" ) != null )
+			{
+				System.out.print( "|    thingSnapshots " );
+				strSize = alignRight( "" + (long) (Double.valueOf( re.get( "size" ).toString() ) / 1024 / 1024), 8, ' ' );
+				strIndex = alignRight( "" + (long) (Double.valueOf( re.get( "totalIndexSize" ).toString() ) / 1024 / 1024), 8, ' ' );
+
+				System.out
+						.println( "|" + alignRight( thingSnapshots.count() + "", 10, ' ' ) + "|" + strSize + " Mb.|" + strIndex + " Mb.|" );
+			}
+		}
+
+		if (thingSnapshotIds != null)
+		{
+			re = thingSnapshotIds.getStats();
+			if( re.get( "size" ) != null )
+			{
+				System.out.print( "|  thingSnapshotIds " );
+				strSize = alignRight( "" + (long) (Double.valueOf( re.get( "size" ).toString() ) / 1024 / 1024), 8, ' ' );
+				strIndex = alignRight( "" + (long) (Double.valueOf( re.get( "totalIndexSize" ).toString() ) / 1024 / 1024), 8, ' ' );
+				System.out.println( "|" + alignRight( thingSnapshotIds.count() + "", 10, ' ' ) + "|" + strSize + " Mb.|" + strIndex + " Mb.|" );
+			}
 		}
 		System.out.println ("+-------------------+----------+------------+------------+");
 
 
-
-		re = db.getStats();
-		for(String k: re.keySet()){
-			//System.out.println(k+"="+re.get(k) );
-		}
 	}
 }

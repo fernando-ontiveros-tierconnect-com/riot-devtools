@@ -78,6 +78,11 @@ public class zonesBlink  implements controllerInterface {
 			posy = 7;
 		}
 
+		if (zone == "Unknown") {
+			posx = 250;
+			posy = 250;
+		}
+
 		sb.append("EPOCH,NOW\n");
 		sb.append("DELT,REL\n");
 		sb.append("\n");
@@ -138,10 +143,12 @@ public class zonesBlink  implements controllerInterface {
 		options.put("2", "send 000000000000000000100 to Salesfloor");
 		options.put("3", "send 000000000000000000100 to POS");
 		options.put("4", "send 000000000000000000100 to Entrance");
-		options.put("5", "send a tag to Stockroom");
-		options.put("6", "send a tag to SalesFloor");
-		options.put("7", "send a tag to POS");
-		options.put("8", "send a tag to Entrance");
+		options.put("5", "send 000000000000000000100 to Unknown");
+		options.put("6", "send a tag to Stockroom");
+		options.put("7", "send a tag to SalesFloor");
+		options.put("8", "send a tag to POS");
+		options.put("9", "send a tag to Entrance");
+		options.put("10", "send a tag to Unknown");
 
 		Integer option = 0;
 		while (option != null) {
@@ -160,16 +167,22 @@ public class zonesBlink  implements controllerInterface {
 					sendZoneBlink("000000000000000000100", "Entrance");
 				}
 				if (option == 4) {
-					sendZoneBlink(null, "Stockroom");
+					sendZoneBlink("000000000000000000100", "Unknown");
 				}
 				if (option == 5) {
-					sendZoneBlink(null, "Salesfloor");
+					sendZoneBlink(null, "Stockroom");
 				}
 				if (option == 6) {
-					sendZoneBlink(null, "POS");
+					sendZoneBlink(null, "Salesfloor");
 				}
 				if (option == 7) {
+					sendZoneBlink(null, "POS");
+				}
+				if (option == 8) {
 					sendZoneBlink(null, "Entrance");
+				}
+				if (option == 9) {
+					sendZoneBlink(null, "Unknown");
 				}
 
 				System.out.println(cu.black() +  "\npress [enter] to continue");
