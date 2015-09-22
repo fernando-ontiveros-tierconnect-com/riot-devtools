@@ -15,6 +15,7 @@ import com.mongodb.WriteConcern;
 import com.tierconnect.controllers.mapreduce;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
@@ -129,6 +130,21 @@ public class CommonUtils
             System.exit(0);
         }
     }
+
+	public void closeMqtt()
+	{
+		if ( mqttClient.isConnected() ) {
+			try
+			{
+				mqttClient.disconnect();
+			} catch( Exception me ) {
+				System.out.println(red());
+				System.out.println(me.getMessage());
+				System.out.println(me);
+			}
+		}
+
+	}
 
     public void setupMongodb(String mongoHost, int mongoPort, String mongoDatabase) {
 
@@ -595,7 +611,7 @@ public class CommonUtils
 			return str;
 		}
 
-		String serialNumber = "000000000000000000000";
+		String serialNumber = "000000000000000000000" + str;
 		return serialNumber.substring( serialNumber.length() - 21, serialNumber.length() );
 	}
 
@@ -619,6 +635,30 @@ public class CommonUtils
 
 		return sequenceNumber;
 	}
+
+	public String getLastSerialForThingType(String defaultRfidThingTypeCode)
+	{
+		String lastSerialNumber;
+		HashMap<String, DBObject> stats = getThingsPerThingType();
+		if (stats.get(defaultRfidThingTypeCode) == null) {
+			lastSerialNumber = "1";
+		}
+		else
+		{
+			Long max;
+			try
+			{
+				max = Long.parseLong( stats.get( defaultRfidThingTypeCode ).get( "max" ).toString() );
+			} catch (Exception e)
+			{
+				max = new Long ( (Integer)stats.get( defaultRfidThingTypeCode ).get( "count" ));
+			}
+			lastSerialNumber = formatSerialNumber( (max + 1) + "" );
+		}
+
+		return lastSerialNumber;
+	}
+
 
 	public HashMap<String,Object> httpPutMessage(String url, String body) throws IOException, URISyntaxException
 	{
@@ -655,6 +695,51 @@ public class CommonUtils
 				System.out.println("Got " + res);
 			} catch (Exception e) {
 
+			}
+		}
+		finally
+		{
+			response.close();
+			return res;
+		}
+	}
+
+	public HashMap<String,Object> httpPostMessage(String url, String body) throws IOException, URISyntaxException
+	{
+		CloseableHttpClient httpclient = HttpClients.createDefault();
+
+		HttpPost http = new HttpPost(servicesApi + url);
+		HashMap<String,Object> res = new HashMap<String,Object>();
+
+		http.setHeader("Content-Type", "text/plain");
+		http.setHeader("Api_key", "root");
+
+		StringEntity entity = new StringEntity( body, ContentType.create( "text/plain", "UTF-8" ) );
+		http.setEntity( entity );
+		CloseableHttpResponse response = httpclient.execute( http );
+		try
+		{
+			InputStream is = response.getEntity().getContent();
+			InputStreamReader isr = new InputStreamReader( is );
+			BufferedReader br = new BufferedReader( isr );
+			String resp = "";
+			String line;
+			while( (line = br.readLine()) != null )
+			{
+				resp += line + "\n";
+			}
+
+			JsonFactory factory = new JsonFactory();
+			ObjectMapper mapper = new ObjectMapper(factory);
+			TypeReference<HashMap<String,Object>> typeRef
+					= new TypeReference<HashMap<String,Object>>() {};
+
+			try {
+				res = mapper.readValue(resp, typeRef);
+				System.out.println("Got " + res);
+			} catch (Exception e) {
+				System.out.print( "Got " );
+				System.out.println( resp);
 			}
 		}
 		finally
@@ -710,7 +795,28 @@ public class CommonUtils
 
 	}
 
-	private HashMap<String, DBObject> getThingsPerThingType()
+	public HashMap<String, DBObject>  getThingsPerThingType()
+	{
+		return getThingsPerThingType( true );
+		/*
+		List<DBObject> pipeline = new ArrayList<>(  );
+
+		BasicDBObject group = new BasicDBObject( "_id", "$thingTypeCode" )
+				.append( "count", new BasicDBObject( "$sum", 1 ) )
+				.append( "max", new BasicDBObject( "$max", "$serialNumber" ) )
+				.append( "min", new BasicDBObject( "$min", "$serialNumber" ) );
+		pipeline.add( new BasicDBObject( "$group", group ));
+
+		Iterator<DBObject> results = thingsCollection.aggregate( pipeline ).results().iterator();
+		HashMap<String, DBObject> map = new HashMap<>(  );
+		while (results.hasNext()) {
+			DBObject res = results.next();
+			map.put( res.get("_id").toString(), res);
+		}
+		*/
+	}
+
+	public HashMap<String, DBObject> getThingsPerThingType(Boolean withChildren)
 	{
 		List<DBObject> pipeline = new ArrayList<>(  );
 		BasicDBObject match;
@@ -732,33 +838,37 @@ public class CommonUtils
 		}
 
 		//count how many children
-		pipeline = new ArrayList<>(  );
+		if (withChildren)
+		{
+			pipeline = new ArrayList<>();
 
-		match = new BasicDBObject( "children", new BasicDBObject( "$ne", null ) );
-		pipeline.add( new BasicDBObject( "$match", match ));
-		pipeline.add( new BasicDBObject( "$group", group ));
+			match = new BasicDBObject( "children", new BasicDBObject( "$ne", null ) );
+			pipeline.add( new BasicDBObject( "$match", match ) );
+			pipeline.add( new BasicDBObject( "$group", group ) );
 
-		results = thingsCollection.aggregate( pipeline ).results().iterator();
-		while (results.hasNext()) {
-			DBObject res = results.next();
-			DBObject type = map.get( res.get("_id"));
-			type.put( "children", res.get( "count" ));
+			results = thingsCollection.aggregate( pipeline ).results().iterator();
+			while( results.hasNext() )
+			{
+				DBObject res = results.next();
+				DBObject type = map.get( res.get( "_id" ) );
+				type.put( "children", res.get( "count" ) );
+			}
+
+			//count how many parents
+			pipeline = new ArrayList<>();
+
+			match = new BasicDBObject( "parent.id", new BasicDBObject( "$ne", null ) );
+			pipeline.add( new BasicDBObject( "$match", match ) );
+			pipeline.add( new BasicDBObject( "$group", group ) );
+
+			results = thingsCollection.aggregate( pipeline ).results().iterator();
+			while( results.hasNext() )
+			{
+				DBObject res = results.next();
+				DBObject type = map.get( res.get( "_id" ) );
+				type.put( "parent", res.get( "count" ) );
+			}
 		}
-
-		//count how many parents
-		pipeline = new ArrayList<>(  );
-
-		match = new BasicDBObject( "parent.id", new BasicDBObject( "$ne", null ) );
-		pipeline.add( new BasicDBObject( "$match", match ));
-		pipeline.add( new BasicDBObject( "$group", group ));
-
-		results = thingsCollection.aggregate( pipeline ).results().iterator();
-		while (results.hasNext()) {
-			DBObject res = results.next();
-			DBObject type = map.get( res.get("_id"));
-			type.put( "parent", res.get("count"));
-		}
-
 		return map;
 
 	}

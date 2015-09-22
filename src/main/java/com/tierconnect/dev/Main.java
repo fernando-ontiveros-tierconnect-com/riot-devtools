@@ -42,6 +42,7 @@ public class Main {
 			"parentChildren",
 			"timeseries",
 			"stats",
+			"bugs",
 			"unknown"
 	};
 
@@ -174,13 +175,11 @@ public class Main {
 			option = showMenu();
 			if (option != null) {
 				controllers.get(option).execute();
-				//System.out.println(ANSI_BLACK +  "\npress [enter] to continue");
-				//Scanner in = new Scanner(System.in);
-				//in.nextLine();
 			}
 		}
 
 		teardown();
+		cu.closeMqtt();
 	}
 
 }

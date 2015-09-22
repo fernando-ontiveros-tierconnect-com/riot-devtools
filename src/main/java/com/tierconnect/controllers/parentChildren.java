@@ -26,11 +26,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -310,7 +307,7 @@ public class parentChildren implements controllerInterface
 		String tag;
 		Integer delayBetweenThings = 1000;
 		StringBuffer sb = new StringBuffer();
-		HashMap<String, DBObject> stats = getThingsPerThingType();
+		HashMap<String, DBObject> stats = cu.getThingsPerThingType();
 		if (stats.get("forklift") == null) {
 			lastSerialNumber = "1";
 		} else
@@ -375,27 +372,6 @@ public class parentChildren implements controllerInterface
 		return "" + r / 100.0;
 	}
 
-	private HashMap<String, DBObject>  getThingsPerThingType()
-	{
-		List<DBObject> pipeline = new ArrayList<>(  );
-
-		BasicDBObject group = new BasicDBObject( "_id", "$thingTypeCode" )
-				.append( "count", new BasicDBObject( "$sum", 1 ) )
-				.append( "max", new BasicDBObject( "$max", "$serialNumber" ) )
-				.append( "min", new BasicDBObject( "$min", "$serialNumber" ) );
-		pipeline.add( new BasicDBObject( "$group", group ));
-
-		Iterator<DBObject> results = thingsCollection.aggregate( pipeline ).results().iterator();
-		HashMap<String, DBObject> map = new HashMap<>(  );
-		while (results.hasNext()) {
-			DBObject res = results.next();
-			map.put( res.get("_id").toString(), res);
-		}
-		//System.out.println(map);
-
-		return map;
-
-	}
 
 	private Long getIdFromThing(String thingTypeCode, String serialNumber)
 	{
@@ -747,7 +723,7 @@ public class parentChildren implements controllerInterface
 	public void execute() {
 		setup();
 		HashMap<String, String> options = new HashMap<String,String>();
-		getThingsPerThingType();
+
 		options.put("1", "create ThingTypes ");
 		options.put("2", "create Parent-Child things");
 		options.put("3", "change things ");
@@ -756,7 +732,7 @@ public class parentChildren implements controllerInterface
 
 		Integer option = 0;
 		while (option != null) {
-			option = cu.showMenu("blink options", options );
+			option = cu.showMenu("parent children options", options );
 			if (option != null) {
 				if (option == 0) {
 					createThingTypes();

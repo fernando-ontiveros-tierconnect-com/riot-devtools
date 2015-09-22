@@ -862,7 +862,7 @@ public class timeseries  implements controllerInterface
 
 		Integer option = 0;
 		while (option != null) {
-			option = cu.showMenu("blink options", options );
+			option = cu.showMenu("timeseries options", options );
 			if (option != null) {
 				if (option == 0) {
 					denseTimeserieReport();
