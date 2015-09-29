@@ -65,14 +65,14 @@ public class stats implements controllerInterface
 
 	private void displayALEBlogHeader()
 	{
-		System.out.println ("+--------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-------+----+------+----+------+");
-		System.out.println ("|  time  | sqn |init |loop1|nativ|esper| fmc |updat|save |serie|paren|total|created|  t |  t/s |  f |  f/s |");
+		System.out.println ("+--------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-------+----+------+----+------+");
+		System.out.println ("|  time  | sqn |init |loop1|nativ|esper| fmc |updat|save |snaps|bucke|paren|total|created|  t |  t/s |  f |  f/s |");
 
 	}
 
 	private void displayALEBlogFooter()
 	{
-		System.out.println ("+--------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-------+----+------+----+------+");
+		System.out.println ("+--------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-------+----+------+----+------+");
 
 		System.out.print( " " + cu.rtrim( "",8)  );
 		System.out.print( " " + cu.rtrim( "",5)  );
@@ -100,8 +100,14 @@ public class stats implements controllerInterface
 			System.out.print( "|" + cu.rtrim( doc.get("time").toString().substring(11,19 ),8)  );
 			System.out.print( "|" + cu.rtrim( doc.get("sqn"),5)  );
 			System.out.print( "|" + cu.rtrim( doc.get("init"),5 ) + "|" + cu.rtrim(doc.get("loop1"), 5)  );
-			System.out.print( "|" + cu.rtrim( doc.get("native"),5) + "|" + cu.rtrim( doc.get("esper"),5 ) + "|" + cu.rtrim(doc.get("fmc"), 5)  );
-			System.out.print( "|" + cu.rtrim( doc.get("update"),5) + "|" + cu.rtrim( doc.get("save"),5 ) + "|" + cu.rtrim(doc.get("history"), 5)  );
+			System.out.print( "|" + cu.rtrim( doc.get("native"),5) + "|" + cu.rtrim( doc.get("esper"),5 ) + "|" + cu.rtrim(doc.get("  fmc  "), 5)  );
+			System.out.print( "|" + cu.rtrim( doc.get("update"),5) + "|" + cu.rtrim( doc.get("save"),5 ) + "|" + cu.rtrim(doc.get( "history"), 5)  );
+            if (doc.containsField( "history2" )) {
+				System.out.print( "|" + cu.rtrim( doc.get("history2"),5  ));
+			}
+			else {
+				System.out.print( "|" + cu.rtrim( " ",5 ) );
+			}
 			System.out.print( "|" + cu.rtrim( doc.get("parent"),5) + "|" + cu.rtrim( doc.get("total"),5 ) + "|" + cu.rtrim( doc.get("thingsCreated"),7) );
 
 			long ts = (long) (1000 * Long.valueOf( doc.get("things").toString() )  / Long.valueOf( doc.get("total").toString() ));

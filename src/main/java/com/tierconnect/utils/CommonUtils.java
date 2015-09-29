@@ -929,6 +929,9 @@ public class CommonUtils
 
 	public String rtrim (Object s, int n)
 	{
+		if (s == null) {
+			return alignRight( " ", n, ' ' );
+		}
 		return alignRight( s.toString(),n, ' ' );
 	}
 
