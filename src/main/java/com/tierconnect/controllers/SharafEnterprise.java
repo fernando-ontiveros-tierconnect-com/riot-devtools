@@ -125,7 +125,9 @@ public class SharafEnterprise implements controllerInterface
 		String clientId = prop.getProperty( "mqtt.clientId" );
 		int qos = Integer.parseInt( prop.getProperty( "mqtt.qos" ));
 
-		cu.setupMqtt(broker, clientId, qos, null, null);
+		cu.defaultMqttConnection();
+
+		//cu.setupMqtt(broker, clientId, qos, null, null);
 	}
 
 

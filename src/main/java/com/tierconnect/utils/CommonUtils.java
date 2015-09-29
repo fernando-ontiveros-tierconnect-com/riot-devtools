@@ -80,6 +80,9 @@ public class CommonUtils
 	String clientId;
 	int qos;
 
+	ArrayList<HashMap<String,Object>> logicalReaders;
+	ArrayList<HashMap<String,Object>> shifts;
+	ArrayList<HashMap<String,Object>> zones;
 
 	public CommonUtils() {
     }
@@ -613,6 +616,57 @@ public class CommonUtils
 
 		String serialNumber = "000000000000000000000" + str;
 		return serialNumber.substring( serialNumber.length() - 21, serialNumber.length() );
+	}
+
+	public void getLogicalReaders()
+	{
+		HashMap<String,Object> res;
+		try
+		{
+			res = httpGetMessage( "logicalReader?pageSize=100&extra=zoneIn%2CzoneOut");
+
+			logicalReaders = (ArrayList<HashMap<String,Object>> )res.get("results");
+			//System.out.println( logicalReaders );
+
+			System.out.println("Valid LogicalReaders:");
+			Iterator it = logicalReaders.iterator();
+			while (it.hasNext()) {
+				HashMap<String,Object> entry = (HashMap<String,Object>)it.next();
+				HashMap<String,Object> zoneIn = (HashMap<String,Object>)entry.get("zoneIn");
+				HashMap<String,Object> zoneOut = (HashMap<String,Object>)entry.get("zoneOut");
+
+				System.out.println( "    id:" + entry.get("id") + " code:" + entry.get("code") +
+								" zoneIn=(" + zoneIn.get("id") + "," + zoneIn.get("name") + ") " +
+								" zoneOut=(" + zoneOut.get("id") + "," + zoneOut.get("name") + ") "
+				);
+			}
+
+		}
+		catch( IOException e )
+		{
+			e.printStackTrace();
+		}
+		catch( URISyntaxException e )
+		{
+			e.printStackTrace();
+		}
+
+	}
+
+	public String getRandomLRCode()
+	{
+		Random r = new Random();
+
+		if (logicalReaders.size() == 0)
+		{
+			System.out.println("Error, the LogicalReaders list is empty!");
+		}
+
+		int index = r.nextInt( logicalReaders.size());
+
+		HashMap<String,Object> entry = (HashMap<String,Object>) logicalReaders.get(index);
+		return  entry.get( "code" ).toString();
+
 	}
 
 	public Long getSequenceNumber()

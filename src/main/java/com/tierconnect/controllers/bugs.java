@@ -5,12 +5,8 @@ import com.mongodb.DBObject;
 import com.tierconnect.dev.controllerInterface;
 import com.tierconnect.utils.CommonUtils;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Random;
 import java.util.Scanner;
@@ -30,8 +26,6 @@ public class bugs implements controllerInterface
 
 	String defaultRfidThingTypeCode = "default_rfid_thingtype";
 	String thingTypeCode = "default_gps_thingtype";
-
-	ArrayList<HashMap<String,Object>> logicalReaders;
 
 	public void setCu( CommonUtils cu )
 	{
@@ -218,57 +212,103 @@ public class bugs implements controllerInterface
 		cu.diffThings( newThing, prevThing );
 	}
 
-	private String getRandomLR()
+	public void doorEvents()
 	{
+		cu.getLogicalReaders();
+		String lr = cu.getRandomLRCode();
+
+		StringBuffer sb = new StringBuffer();
+		Scanner in;
+		in = new Scanner(System.in);
+
 		Random r = new Random();
+		String serialNumber = "";
 
-		if (logicalReaders.size() == 0)
-		{
-			System.out.println("Error, the LogicalReaders list is empty!");
+		final String defaultRfidThingTypeCode = "default_rfid_thingtype";
+		String topic = "/v1/data/ALEB/" + defaultRfidThingTypeCode;
+		Long time = new Date().getTime();
+
+		lastSerialNumber = cu.getLastSerialForThingType(defaultRfidThingTypeCode);
+
+		lastSerialNumber = cu.formatSerialNumber( cu.prompt( "enter serialNumber", lastSerialNumber ));
+		serialNumber = lastSerialNumber;
+
+		sequenceNumber = cu.getSequenceNumber();
+
+		String inOut= "out";
+
+		if (r.nextDouble() < 0.50 ) {
+			inOut = "in";
 		}
 
-		int index = r.nextInt( logicalReaders.size());
+		sb.append( " sn," + sequenceNumber + "\n" );
+		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
 
-		HashMap<String,Object> entry = (HashMap<String,Object>) logicalReaders.get(index);
-		if (r.nextDouble() < 0.5)
-		{
-			return  entry.get( "code" ).toString();
-		} else {
-			return entry.get( "id" ).toString();
-		}
+		sb.append( serialNumber + "," + time + ",doorEvent," + lr + ":" + inOut + "\n" );
+
+		System.out.println( "  serialNumber: " + cu.blue() + serialNumber + cu.black() + "" );
+		System.out.println( " thingTypeCode: " + cu.blue() + defaultRfidThingTypeCode + cu.black() + "" );
+		System.out.println( "logical reader: " + cu.blue() + lr + cu.black() + "" );
+		System.out.println( "         value: " + cu.blue() + inOut + cu.black() + "" );
+
+		DBObject prevThing = cu.getThing( serialNumber, defaultRfidThingTypeCode );
+
+		cu.publishSyncMessage( topic, sb.toString() );
+		cu.sleep( 1000 );
+
+		cu.diffThings(cu.getThing(serialNumber, defaultRfidThingTypeCode), prevThing);
 
 	}
 
-
-	private void getLogicalReaders()
+	public void resendMessages()
 	{
-		HashMap<String,Object> res;
-		try
-		{
-			res = cu.httpGetMessage( "logicalReader?pageSize=100");
+		StringBuffer sb = new StringBuffer();
+		Scanner in;
+		in = new Scanner(System.in);
 
-			logicalReaders = (ArrayList<HashMap<String,Object>> )res.get("results");
-			//System.out.println( logicalReaders );
+		Random r = new Random();
+		String serialNumber = "";
 
-			System.out.println("Valid LogicalReaders:");
-			Iterator it = logicalReaders.iterator();
-			while (it.hasNext()) {
-				HashMap<String,Object> entry = (HashMap<String,Object>)it.next();
-				System.out.println( "    id:" + entry.get("id") + " code:" + entry.get("code") );
-			}
+		final String defaultRfidThingTypeCode = "default_rfid_thingtype";
+		String topic = "/v1/data/ALEB/" + defaultRfidThingTypeCode;
+		Long time = new Date().getTime();
 
-		}
-		catch( IOException e )
-		{
-			e.printStackTrace();
-		}
-		catch( URISyntaxException e )
-		{
-			e.printStackTrace();
-		}
+		lastSerialNumber = cu.getLastSerialForThingType(defaultRfidThingTypeCode);
+
+		lastSerialNumber = cu.formatSerialNumber( cu.prompt( "enter serialNumber", lastSerialNumber ));
+		serialNumber = lastSerialNumber;
+
+		sequenceNumber = cu.getSequenceNumber();
+
+		String inOut= "status " + r.nextInt( 900 ) + 100;
+
+		sb.append( "sn," + sequenceNumber + "\n" );
+		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
+		sb.append( serialNumber + "," + time + ",status," + inOut + "\n" );
+
+		System.out.println( "\nsending this message to default MQTT broker: \n" + cu.blue() + sb.toString() + cu.black() );
+
+		DBObject prevThing = cu.getThing( serialNumber, defaultRfidThingTypeCode );
+
+		cu.publishSyncMessage( topic, sb.toString() );
+		cu.sleep( 1000 );
+		System.out.println( "\nnow check with mosquitto_sub that message was sent" );
+		System.out.println( "also check in CoreBridge logs that the blink was processed."  );
+
+		System.out.println(cu.black() +  "\npress [enter] to resend the message");
+
+		in.nextLine();
+
+		cu.publishSyncMessage( topic, sb.toString() );
+		cu.sleep( 1000 );
+
+		System.out.println( "\n now check with mosquitto_sub that message was sent"  );
+		System.out.println( "also check in CoreBridge logs that the blink was NOT processed \n"  );
+
+		cu.sleep( 2000 );
+		cu.diffThings(cu.getThing(serialNumber, defaultRfidThingTypeCode), prevThing);
 
 	}
-
 
 	public void execute() {
 		setup();
@@ -276,6 +316,7 @@ public class bugs implements controllerInterface
 
 		options.put("1", "RIOT-5841 Inconsistencies in Mysql, duplicated things");
 		options.put("2", "RIOT-6241 Door Event Filters");
+		options.put("3", "RIOT-6337 Queued Mqtt messages are processed multiple times");
 		//options.put("9", "send a JSON to udf");
 
 		Integer option = 0;
@@ -285,6 +326,16 @@ public class bugs implements controllerInterface
 				if (option == 0 )
 				{
 					instantiateMany();
+				}
+
+				if (option == 1 )
+				{
+					doorEvents();
+				}
+
+				if (option == 2 )
+				{
+					resendMessages();
 				}
 
 				System.out.println(cu.black() +  "\npress [enter] to continue");
