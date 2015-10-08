@@ -47,12 +47,15 @@ public class nativeObjects implements controllerInterface
 	String multiplezoneField = "multiZone";
 	String shiftField = "shift";
 	String multipleshiftField = "multiShift";
+	String groupField = "groups";
+	String thingTypeField = "RFID";
 
 	String thingFieldJSON = "shifts";
 
 	ArrayList<HashMap<String,Object>> logicalReaders;
 	ArrayList<HashMap<String,Object>> shifts;
 	ArrayList<HashMap<String,Object>> zones;
+	ArrayList<HashMap<String,Object>> groups;
 
 	public void setCu( CommonUtils cu )
 	{
@@ -682,7 +685,7 @@ public class nativeObjects implements controllerInterface
 		HashMap<String,Object> entry = (HashMap<String,Object>) shifts.get(index);
 		if (r.nextDouble() < 0.5)
 		{
-			return  entry.get( "name" ).toString();
+			return  entry.get( "code" ).toString();
 		} else {
 			return entry.get( "id" ).toString();
 		}
@@ -726,7 +729,7 @@ public class nativeObjects implements controllerInterface
 			Iterator it = shifts.iterator();
 			while (it.hasNext()) {
 				HashMap<String,Object> entry = (HashMap<String,Object>)it.next();
-				System.out.println( "    id:" + entry.get("id") + " name:" + entry.get("name") );
+				System.out.println( "    id:" + entry.get("id") + " code:" + entry.get("code") );
 			}
 
 		}
@@ -811,6 +814,138 @@ public class nativeObjects implements controllerInterface
 		System.out.println( "thingTypeCode: " + cu.blue() + multipleThingTypeCode + cu.black() + "" );
 		System.out.println( "        field: " + cu.blue() + multipleshiftField + cu.black() + "" );
 		System.out.println( "        value: " + cu.blue() + shiftValue + cu.black() + "" );
+
+		DBObject prevThing = cu.getThing( serialNumber, multipleThingTypeCode );
+
+		cu.publishSyncMessage( topic, sb.toString() );
+		cu.sleep( 1000 );
+
+		DBObject newThing = cu.getThing( serialNumber, multipleThingTypeCode );
+		cu.diffThings( newThing, prevThing );
+	}
+
+
+	private String getGroup()
+	{
+		Random r = new Random();
+
+		if (groups.size() == 0)
+		{
+			System.out.println("Error, the groups list is empty!");
+		}
+
+		int index = r.nextInt( groups.size());
+
+		HashMap<String,Object> entry = (HashMap<String,Object>) groups.get(index);
+		if (r.nextDouble() < 0.5)
+		{
+			return  entry.get( "code" ).toString();
+		} else {
+			return entry.get( "id" ).toString();
+		}
+
+	}
+
+	private void getGroups()
+	{
+		HashMap<String,Object> res;
+		try
+		{
+			res = cu.httpGetMessage("group");
+
+			groups = (ArrayList<HashMap<String,Object>> )res.get("results");
+			System.out.println( groups );
+
+			System.out.println("Valid Groups:");
+			Iterator it = groups.iterator();
+			while (it.hasNext()) {
+				HashMap<String,Object> entry = (HashMap<String,Object>)it.next();
+				System.out.println( "    id:" + entry.get("id") + " name:" + entry.get("name") );
+			}
+
+		}
+		catch( IOException e )
+		{
+			e.printStackTrace();
+		}
+		catch( URISyntaxException e )
+		{
+			e.printStackTrace();
+		}
+
+	}
+
+	private void sendGroupBlink() {
+		getGroups();
+		StringBuffer sb = new StringBuffer();
+
+		String serialNumber = "";
+
+		serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber", lastSerialNumber );
+		lastSerialNumber = serialNumber.substring( serialNumber.length() - 21, serialNumber.length() );
+		serialNumber = lastSerialNumber;
+
+		multipleThingTypeCode = cu.prompt( "enter the thingTypeCode", multipleThingTypeCode );
+
+		groupField = cu.prompt( "enter the udf name", groupField );
+
+		String groupValue = getGroup();
+		groupValue = cu.prompt( "enter the Group Value", groupValue );
+
+		String topic = "/v1/data/ALEB/" + multipleThingTypeCode;
+
+		sequenceNumber = cu.getSequenceNumber();
+		Long time = new Date().getTime();
+		sb.append( " sn," + sequenceNumber + "\n" );
+		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
+
+		sb.append( serialNumber + "," + time + "," + groupField + "," + "\"" + groupValue + "\"\n" );
+
+		System.out.println( " serialNumber: " + cu.blue() + serialNumber + cu.black() + "" );
+		System.out.println( "thingTypeCode: " + cu.blue() + multipleThingTypeCode + cu.black() + "" );
+		System.out.println( "        field: " + cu.blue() + groupField + cu.black() + "" );
+		System.out.println( "        value: " + cu.blue() + groupValue + cu.black() + "" );
+
+		DBObject prevThing = cu.getThing( serialNumber, multipleThingTypeCode );
+
+		cu.publishSyncMessage( topic, sb.toString() );
+		cu.sleep( 1000 );
+
+		DBObject newThing = cu.getThing( serialNumber, multipleThingTypeCode );
+		cu.diffThings( newThing, prevThing );
+	}
+
+
+	private void sendThingTypeBlink() {
+		getGroups();
+		StringBuffer sb = new StringBuffer();
+
+		String serialNumber = "";
+
+		serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber", lastSerialNumber );
+		lastSerialNumber = serialNumber.substring( serialNumber.length() - 21, serialNumber.length() );
+		serialNumber = lastSerialNumber;
+
+		multipleThingTypeCode = cu.prompt( "enter the thingTypeCode", multipleThingTypeCode );
+
+		thingTypeField = cu.prompt( "enter the udf name", thingTypeField );
+
+		String thingTypeValue = getGroup();
+		thingTypeValue = cu.prompt( "enter a valid thing Id", thingTypeValue );
+
+		String topic = "/v1/data/ALEB/" + multipleThingTypeCode;
+
+		sequenceNumber = cu.getSequenceNumber();
+		Long time = new Date().getTime();
+		sb.append( " sn," + sequenceNumber + "\n" );
+		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
+
+		sb.append( serialNumber + "," + time + "," + thingTypeField + "," + "\"" + thingTypeValue + "\"\n" );
+
+		System.out.println( " serialNumber: " + cu.blue() + serialNumber + cu.black() + "" );
+		System.out.println( "thingTypeCode: " + cu.blue() + multipleThingTypeCode + cu.black() + "" );
+		System.out.println( "        field: " + cu.blue() + thingTypeField + cu.black() + "" );
+		System.out.println( "        value: " + cu.blue() + thingTypeValue + cu.black() + "" );
 
 		DBObject prevThing = cu.getThing( serialNumber, multipleThingTypeCode );
 
@@ -906,13 +1041,14 @@ public class nativeObjects implements controllerInterface
 		HashMap<String, String> options = new LinkedHashMap<String,String>();
 
 		options.put("1", "create ThingTypes");
-		options.put("2", "send a CSV (comma separate values) to udf");
+		options.put("2", "send CSV (comma separate values) to udf");
 		options.put("3", "send simple LogicalReader");
 		options.put("4", "send simple Zone");
 		options.put("5", "send simple Shift");
-		options.put("6", "send multiple LogicalReader");
-		options.put("7", "send multiple Zone");
+		options.put("6", "send simple Group");
+		options.put("7", "send multiple LogicalReader");
 		options.put("8", "send multiple Shift");
+		options.put("9", "send thing type");
 		//options.put("9", "send a JSON to udf");
 
 		Integer option = 0;
@@ -940,15 +1076,19 @@ public class nativeObjects implements controllerInterface
 				}
 
 				if (option == 5) {
-					sendMultipleLogicalReaderBlink();
+					sendGroupBlink();
 				}
 
 				if (option == 6) {
-					sendMultipleZoneBlink();
+					sendMultipleLogicalReaderBlink();
 				}
 
 				if (option == 7) {
 					sendMultipleShiftBlink();
+				}
+
+				if (option == 8) {
+					sendThingTypeBlink();
 				}
 
 				//if (option == 5) {
