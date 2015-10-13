@@ -136,6 +136,9 @@ public class CommonUtils
 
 	public void closeMqtt()
 	{
+		if (mqttClient == null) {
+			return;
+		}
 		if ( mqttClient.isConnected() ) {
 			try
 			{
@@ -425,8 +428,23 @@ public class CommonUtils
                 while (itTwo.hasNext()) {
                     Map.Entry<String,Object> fieldTwo;
                     fieldTwo = itTwo.next();
+					String udfclass = "";
+					if (fieldTwo.getKey().equals( "value" ) )
+					{
+						udfclass = fieldTwo.getValue().getClass().getName();
+						if (udfclass.equals( "java.lang.String" )) {
+							udfclass = "String";
+						}
+						if (udfclass.equals( "java.lang.Long" )) {
+							udfclass = "Long";
+						}
+						if (udfclass.equals( "java.lang.Double" )) {
+							udfclass = "Double";
+						}
+						udfclass = "(" + udfclass + ")";
+					}
                     //if (fieldTwo.getValue().getClass().equals(String.class)) {
-                    System.out.println(maxpad + "  " + black() + fieldTwo.getKey() + black() + ": " + blue() + fieldTwo.getValue() + black());
+                    System.out.println(maxpad + "  " + black() + fieldTwo.getKey() + black() + udfclass + ": " + blue() + fieldTwo.getValue() + black());
 
                 }
                 System.out.println(black() + String.format("%"+maxlength+"s", " ") + black() + "}" );
@@ -479,7 +497,25 @@ public class CommonUtils
 				while (itTwo.hasNext()) {
 					Map.Entry<String,Object> fieldTwo;
 					fieldTwo = itTwo.next();
-					System.out.println(maxpad + "  " + black() + fieldTwo.getKey() + black() + ": " + blue() + fieldTwo.getValue() + black());
+					String udfclass = "";
+					if (fieldTwo == null) {
+						continue;
+					}
+					if (fieldTwo.getKey().equals( "value" ) )
+					{
+						if (fieldTwo.getValue() == null) {
+							continue;
+						}
+						udfclass = fieldTwo.getValue().getClass().getName();
+						if (udfclass.equals( "java.lang.String" )) {
+							udfclass = "String";
+						}
+						if (udfclass.equals( "java.lang.Long" )) {
+							udfclass = "Long";
+						}
+						udfclass = "(" + udfclass + ")";
+					}
+					System.out.println(maxpad + "  " + black() + fieldTwo.getKey() + black() + udfclass + ": " + blue() + fieldTwo.getValue() + black());
 
 					if (oldDoc != null && (DBObject)oldDoc.get(field.getKey()) != null) {
 						DBObject oldField = (DBObject) oldDoc.get(field.getKey());
@@ -487,7 +523,19 @@ public class CommonUtils
 						if (oldFieldTwo != null && !oldFieldTwo.equals(fieldTwo.getValue())) {
 							pad = maxpad + "<old value>";
 							pad = pad.substring(pad.length() - maxlength, pad.length());
-							System.out.println(" " + green() + pad + " " + black() + fieldTwo.getKey() + ": " + blue() + oldFieldTwo + black());
+							udfclass = "";
+							if (fieldTwo.getKey().equals( "value" ) )
+							{
+								udfclass = fieldTwo.getValue().getClass().getName();
+								if (udfclass.equals( "java.lang.String" )) {
+									udfclass = "String";
+								}
+								if (udfclass.equals( "java.lang.Long" )) {
+									udfclass = "Long";
+								}
+								udfclass = "(" + udfclass + ")";
+							}
+							System.out.println(" " + green() + pad + " " + black() + fieldTwo.getKey() + udfclass + ": " + blue() + oldFieldTwo + black());
 						}
 					}
 				}

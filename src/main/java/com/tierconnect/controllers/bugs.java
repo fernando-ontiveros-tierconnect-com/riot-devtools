@@ -1,10 +1,14 @@
 package com.tierconnect.controllers;
 
+import com.mongodb.BasicDBObject;
 import com.mongodb.DBCollection;
+import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
 import com.tierconnect.dev.controllerInterface;
 import com.tierconnect.utils.CommonUtils;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -310,6 +314,279 @@ public class bugs implements controllerInterface
 
 	}
 
+	private String displayTime( Date time)
+	{
+		DateFormat writeFormat = new SimpleDateFormat( "HH:mm:ss");
+		String formattedDate = writeFormat.format( time );
+		return formattedDate;
+	}
+
+	public void showResults(String serialNumber)
+	{
+//		cu.diffThings(cu.getThing(serialNumber, defaultRfidThingTypeCode), prevThing);
+		DBCollection ts = cu.db.getCollection( "thingSnapshots" );
+
+		DBCursor cursor = ts.find( new BasicDBObject( "value.serialNumber", serialNumber )).sort( new BasicDBObject("time", -1));
+
+		while (cursor.hasNext())
+		{
+			BasicDBObject snapshot = (BasicDBObject)cursor.next();
+			BasicDBObject value  = (BasicDBObject)snapshot.get("value");
+			Date time   = (Date)snapshot.get("time");
+			BasicDBObject zone   = (BasicDBObject)value.get("zone");
+			BasicDBObject lr     = (BasicDBObject)value.get("logicalReader");
+			BasicDBObject status = (BasicDBObject)value.get("status");
+
+			System.out.print ("||");
+
+			//zone
+			System.out.print (cu.ltrim( displayTime( time ), 8 ) + "|");
+			if (zone != null)
+			{
+				BasicDBObject zoneObj = (BasicDBObject)zone.get( "value" );
+				System.out.print( cu.ltrim( zoneObj.get( "name" ).toString(), 15 ) );
+			} else
+			{
+				System.out.print( cu.ltrim( " ", 15 ) );
+			}
+			System.out.print( "|" );
+			if (zone != null)
+			{
+				Long dwellTime = Long.parseLong( zone.get( "dwellTime" ).toString() ) + 4*60*60*1000;
+				System.out.print( cu.ltrim( displayTime( new Date(dwellTime) ), 9 ));
+			} else {
+				System.out.print( cu.ltrim( " ", 9 ));
+			}
+			System.out.print ("||");
+
+			//lr
+			if (lr != null)
+			{
+				BasicDBObject lrObj = (BasicDBObject)lr.get( "value" );
+				System.out.print( cu.ltrim( lrObj.get( "code" ).toString(), 10 ) );
+			} else {
+				System.out.print( cu.ltrim( " ", 10 ));
+			}
+			System.out.print( "|" );
+			if (lr != null)
+			{
+				Long dwellTime = Long.parseLong( lr.get( "dwellTime" ).toString() ) + 4*60*60*1000;
+				System.out.print( cu.ltrim( displayTime( new Date(dwellTime) ), 9 ));
+			} else {
+				System.out.print( cu.ltrim( " ", 9 ));
+			}
+			System.out.print ("||");
+
+			//status
+			if (status != null)
+			{
+				System.out.print( cu.ltrim( status.get( "value" ).toString(), 10 ) );
+			} else {
+				System.out.print( cu.ltrim( " ", 10 ) );
+			}
+			System.out.print( "|" );
+			if (status != null)
+			{
+				Long dwellTime = Long.parseLong( status.get( "dwellTime" ).toString() ) + 4*60*60*1000;
+				System.out.print( cu.ltrim( displayTime( new Date(dwellTime) ), 9 ));
+			} else {
+				System.out.print( cu.ltrim( " ", 9 ));
+			}
+			System.out.println( "|" );
+
+		}
+		System.out.println();
+	}
+
+
+
+	public String getZone1( String serialNumber, Long time)
+	{
+		String res = "";
+		res += serialNumber + "," + time + ",location,-118.44395517462448;34.04811656588989;0.0" + "\n";
+		res += serialNumber + "," + time + ",locationXYZ,7.0;7.0;0.0" + "\n";
+		return res;
+	}
+
+	public String getZone2( String serialNumber, Long time)
+	{
+		String res = "";
+		res += serialNumber + "," + time + ",location,-118.44381404397095;34.04821157541592;0.0" + "\n";
+		res += serialNumber + "," + time + ",locationXYZ,59.0;25.0;0.0" + "\n";
+		return res;
+	}
+
+	public String getZone3( String serialNumber, Long time)
+	{
+		String res = "";
+		res += serialNumber + "," + time + ",location,-118.44390383463396;34.048239858851375;0.0" + "\n";
+		res += serialNumber + "," + time + ",locationXYZ,37.0;44.0;0.0" + "\n";
+		return res;
+	}
+
+	public String getZone4( String serialNumber, Long time)
+	{
+		String res = "";
+		res += serialNumber + "," + time + ",location,-118.44392666764658;34.048139731794365;0.0" + "\n";
+		res += serialNumber + "," + time + ",locationXYZ,18.0;12.0;0.0" + "\n";
+		return res;
+	}
+
+	public void sendBlinkChangingZone (String topic, Long time, String serialNumber)
+	{
+		sendBlinks( topic, time, serialNumber, true, false );
+	}
+
+	public void sendBlinkChangingLR (String topic, Long time, String serialNumber)
+	{
+		sendBlinks( topic, time, serialNumber, false, true );
+	}
+
+	public void sendBlinkChangingZoneAndLR(String topic, Long time, String serialNumber)
+	{
+		sendBlinks( topic, time, serialNumber, true, true );
+	}
+
+	public void sendBlinks(String topic, Long time, String serialNumber, boolean zone, boolean lr )
+	{
+		StringBuffer sb = new StringBuffer();
+		Random r = new Random();
+
+		String inOut= "out";
+
+		if (r.nextDouble() < 0.50 ) {
+			inOut = "in";
+		}
+
+		sequenceNumber = cu.getSequenceNumber();
+		sb.append( " sn," + sequenceNumber + "\n" );
+		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
+
+		System.out.println(	cu.blue() + "sn," + sequenceNumber + cu.black() );
+
+		if (zone)
+		{
+			int zr = r.nextInt( 100 )%4;
+
+			String zoneValue = "";
+			switch( zr ) {
+				case 0 : zoneValue = getZone1(serialNumber, time);
+					break;
+				case 1 : zoneValue = getZone2( serialNumber, time );
+					break;
+				case 2 : zoneValue = getZone3( serialNumber, time );
+					break;
+				case 3 : zoneValue = getZone4( serialNumber, time );
+					break;
+			}
+			sb.append( zoneValue );
+
+			System.out.print(  zoneValue );
+
+		}
+
+		if (lr)
+		{
+			String lrValue = cu.getRandomLRCode();
+			sequenceNumber = cu.getSequenceNumber();
+			sb.append( serialNumber + "," + time + ",logicalReader," + lrValue + "\n" );
+
+			System.out.println(  serialNumber + "," + time + ",lr," + lrValue  );
+
+		}
+		cu.publishSyncMessage( topic, sb.toString() );
+		System.out.println( );
+
+	}
+
+	public void pressAnyKey()
+	{
+		System.out.println(cu.black() +  "\npress [enter] to continue");
+		Scanner in = new Scanner(System.in);
+		in.nextLine();
+
+	}
+
+	public long getNextSecond10()
+	{
+		Date now = new Date();
+		while( now.getTime() % 10000 != 0 )
+		{
+			now = new Date();
+		}
+		;
+		return now.getTime();
+	}
+
+	public void dwellTimeIssue()
+	{
+		//send four blinks each 10 seconds, modifying zone and logicalreader
+		//wait for a change in UI
+		//send one blink changing logical reader
+		//send second blink changing zone
+		//show results
+
+		cu.getLogicalReaders();
+
+		String lr = cu.getRandomLRCode();
+
+		Scanner in;
+		in = new Scanner(System.in);
+
+		String serialNumber = "";
+
+		final String defaultRfidThingTypeCode = "default_rfid_thingtype";
+
+		lastSerialNumber = cu.getLastSerialForThingType(defaultRfidThingTypeCode);
+
+		lastSerialNumber = cu.formatSerialNumber( cu.prompt( "enter serialNumber", lastSerialNumber ));
+		serialNumber = lastSerialNumber;
+
+		String topic = "/v1/data/ALEB/" + defaultRfidThingTypeCode;
+		Long time;
+
+		System.out.println( );
+		System.out.println( cu.blue() + "1. send four blinks each 10 seconds, modifying zone and logical reader" + cu.black() );
+
+		time = getNextSecond10();
+		sendBlinkChangingZone( topic, time, serialNumber );
+		cu.sleep( 3000 );
+		showResults( serialNumber );
+
+		time = getNextSecond10();
+		sendBlinkChangingLR( topic, time, serialNumber );
+		cu.sleep( 3000 );
+		showResults( serialNumber);
+
+		time = getNextSecond10();
+		sendBlinkChangingZoneAndLR(topic, time, serialNumber);
+		cu.sleep( 3000 );
+		showResults( serialNumber);
+
+		time = getNextSecond10();
+		sendBlinkChangingZone( topic, time, serialNumber );
+		cu.sleep( 3000 );
+		showResults( serialNumber);
+
+		System.out.println( cu.blue() + "2. wait until user change status udf in UI" + cu.black() );
+		pressAnyKey();
+		showResults( serialNumber);
+
+		System.out.println( cu.blue() + "3. change zone" + cu.black() );
+		time = getNextSecond10();
+		sendBlinkChangingZone(topic, time, serialNumber);
+		cu.sleep( 3000 );
+		showResults( serialNumber);
+
+		System.out.println( cu.blue() + "4. change logicalreader" + cu.black() );
+		time = getNextSecond10();
+		sendBlinkChangingLR(topic, time, serialNumber);
+		cu.sleep( 3000 );
+		showResults( serialNumber);
+
+	}
+
+
 	public void execute() {
 		setup();
 		HashMap<String, String> options = new LinkedHashMap<String,String>();
@@ -317,6 +594,7 @@ public class bugs implements controllerInterface
 		options.put("1", "RIOT-5841 Inconsistencies in Mysql, duplicated things");
 		options.put("2", "RIOT-6241 Door Event Filters");
 		options.put("3", "RIOT-6337 Queued Mqtt messages are processed multiple times");
+		options.put("4", "RIOT-6642 dwellTime value is not being calculated correctly for each blink");
 		//options.put("9", "send a JSON to udf");
 
 		Integer option = 0;
@@ -336,6 +614,11 @@ public class bugs implements controllerInterface
 				if (option == 2 )
 				{
 					resendMessages();
+				}
+
+				if (option == 3 )
+				{
+					dwellTimeIssue();
 				}
 
 				System.out.println(cu.black() +  "\npress [enter] to continue");
