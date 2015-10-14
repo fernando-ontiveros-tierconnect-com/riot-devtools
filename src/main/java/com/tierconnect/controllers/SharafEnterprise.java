@@ -223,33 +223,24 @@ public class SharafEnterprise implements controllerInterface
 			for (i=0; i < THING_PER_BLINK; i++) {
 				serial = nextSerialNumber();
 
-				//msg.append( serial + "," + time + ",sGroup," + "3" + "\n");
-				//msg.append( serial + "," + time + ",facilityCode," + "3" + "\n");
-				//msg.append( serial + "," + time + ",serialNUM," + serial + "\n");
 				msg.append( serial + "," + time + ",lastLocateTime," + now + "\n");
 				msg.append( serial + "," + time + ",lastDetectTime," + now + "\n");
-				msg.append( serial + "," + time + ",Timestamp," + timeNow + "\n");
 				msg.append( serial + "," + time + ",status," + getRandomStatus() + "\n");
 				msg.append( serial + "," + time + ",itemcode," + getRandomItemCode() + "\n");
 				msg.append( serial + "," + time + ",logicalReader," + getRandomLR() + "\n");
 				msg.append( serial + "," + time + ",eNode," + getRandomEnode() + "\n");
-				//msg.append( serial + "," + time + ",SKU," + "" + "\n");
 				msg.append( serial + "," + time + ",IsAlreadyBuzzed," + getRandomBoolean() + "\n");
 				msg.append( serial + "," + time + ",IsNotDetected," + getRandomBoolean() + "\n");
 				msg.append( serial + "," + time + ",FindIT," + getRandomBoolean() + "\n");
 				msg.append( serial + "," + time + ",IsMisplaced," + getRandomBoolean() + "\n");
-				//msg.append( serial + "," + time + ",DocumentNum," + serialNumber + "\n");
 				msg.append( serial + "," + time + ",Department,"  + "default department" + "\n");
 				msg.append( serial + "," + time + ",supplier,"    + "default supplier for " + serial + "\n");
 				msg.append( serial + "," + time + ",DisplayProduct," + "default display product for " + serial + "\n");
 				msg.append( serial + "," + time + ",location,"    + "-118.443969;34.048092;0.0" + "\n");
 				msg.append( serial + "," + time + ",locationXYZ," + "7.0;7.0;0.0" + "\n");
 				msg.append( serial + "," + time + ",productDescrip," + "default product description for " + serial + "\n");
-				//msg.append( serial + "," + time + ",image,"     + "default image for " + serial + "\n");
-				msg.append( serial + "," + time + ",StockType," + "default stock type for " + serial + "\n");
 				msg.append( serial + "," + time + ",brand,"     + getRandomBrand() + "\n");
 				msg.append( serial + "," + time + ",AssignedZone," + getRandomZone() + "\n");
-				//msg.append( serial + "," + time + ",registered,"   + getRandomBoolean() + "\n");
 				msg.append( serial + "," + time + ",price,"   + getRandomPrice() + "\n");
 				msg.append( serial + "," + time + ",touches," + "0" + "\n");
 				msg.append( serial + "," + time + ",likes,"   + "0" + "\n");
@@ -315,34 +306,60 @@ public class SharafEnterprise implements controllerInterface
 		while ( it.hasNext())
 		{
 			String serialNumber = it.next();
-			msg.append( serialNumber + "," + time + ",lastLocateTime," + time + "\n" );
 			msg.append( serialNumber + "," + time + ",lastDetectTime," + time + "\n" );
-			msg.append( serialNumber + "," + time + ",status," + getRandomStatus() + "\n" );
-			msg.append( serialNumber + "," + time + ",locationXYZ," + r.nextInt( 499 ) + ".0;" + r.nextInt( 499 ) + ".0;0.0\n" );
-			msg.append( serialNumber + "," + time + ",brand," + getRandomBrand() + "\n" );
 
+
+			if( r.nextDouble() < 0.8 )
+			{
+				msg.append( serialNumber + "," + time + ",lastLocateTime," + time + "\n" );
+				msg.append( serialNumber + "," + time + ",locationXYZ," + r.nextInt( 499 ) + ".0;" + r.nextInt( 499 ) + ".0;0.0\n" );
+			}
 			if( r.nextDouble() < 0.5 )
+			{
+				msg.append( serialNumber + "," + time + ",status," + getRandomStatus() + "\n" );
+			}
+			if( r.nextDouble() < 0.4 )
+			{
+				msg.append( serialNumber + "," + time + ",brand," + getRandomBrand() + "\n" );
+			}
+			if( r.nextDouble() < 0.4 )
 			{
 				msg.append( serialNumber + "," + time + ",logicalReader," + getRandomLR() + "\n" );
-				msg.append( serialNumber + "," + time + ",IsAlreadyBuzzed," + getRandomBoolean() + "\n" );
-				msg.append( serialNumber + "," + time + ",IsNotDetected," + getRandomBoolean() + "\n" );
 			}
-			if( r.nextDouble() < 0.5 )
+			if( r.nextDouble() < 0.3 )
 			{
 				msg.append( serialNumber + "," + time + ",FindIT," + getRandomBoolean() + "\n" );
+			}
+			if( r.nextDouble() < 0.3 )
+			{
 				msg.append( serialNumber + "," + time + ",IsMisplaced," + getRandomBoolean() + "\n" );
 			}
-			if( r.nextDouble() < 0.5 )
+			if( r.nextDouble() < 0.3 )
 			{
 				msg.append( serialNumber + "," + time + ",AssignedZone," + getRandomZone() + "\n" );
+			}
+			if( r.nextDouble() < 0.3 )
+			{
 				msg.append( serialNumber + "," + time + ",touches," + r.nextInt( 499 ) + "\n" );
 			}
-			if( r.nextDouble() < 0.5 )
+			if( r.nextDouble() < 0.3 )
 			{
 				msg.append( serialNumber + "," + time + ",price," + getRandomPrice() + "\n" );
+			}
+			if( r.nextDouble() < 0.3 )
+			{
 				msg.append( serialNumber + "," + time + ",likes," + r.nextInt( 499 ) + "\n" );
 			}
 
+			if( r.nextDouble() < 0.3 )
+			{
+				msg.append( serialNumber + "," + time + ",IsAlreadyBuzzed," + getRandomBoolean() + "\n" );
+			}
+
+			if( r.nextDouble() < 0.3 )
+			{
+				msg.append( serialNumber + "," + time + ",IsNotDetected," + getRandomBoolean() + "\n" );
+			}
 		}
 
 		cu.publishSyncMessage(topic, msg.toString());
