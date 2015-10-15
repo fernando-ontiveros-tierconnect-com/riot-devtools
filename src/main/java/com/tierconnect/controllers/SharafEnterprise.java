@@ -26,14 +26,14 @@ public class SharafEnterprise implements controllerInterface
 {
 	CommonUtils cu;
 
-	Integer THING_PER_BLINK = 250;
-	Long lastSerialNumber = 10000L;
+	Integer INSERTS_PER_BLINK = 100;
+	Integer UPDATES_PER_BLINK = 200;
 	Long serialNumber     = 0L;
 	Long lastQuantity = 10000L;
 	Long sequenceNumber = 0L;
 
 	Long thingsToChange = 0L;
-	Integer delayBetweenThings = 100;
+	Integer delayBetweenThings = 1000;
 	Integer thingsPerBlink = 100;
 
 	Long errores;
@@ -220,7 +220,7 @@ public class SharafEnterprise implements controllerInterface
 
 			Date timeNow = new Date();
 			Long now = timeNow.getTime();
-			for (i=0; i < THING_PER_BLINK; i++) {
+			for (i=0; i < INSERTS_PER_BLINK; i++) {
 				serial = nextSerialNumber();
 
 				msg.append( serial + "," + time + ",lastLocateTime," + now + "\n");
@@ -250,7 +250,7 @@ public class SharafEnterprise implements controllerInterface
 			cu.publishSyncMessage(topic, msg.toString());
 			cu.sleep(delayBetweenThings );
 
-			created += THING_PER_BLINK;
+			created += INSERTS_PER_BLINK;
 		} catch (Exception e) {
 			System.out.println(e.getCause());
 		}
@@ -263,16 +263,32 @@ public class SharafEnterprise implements controllerInterface
 		String tag;
 		Integer delayBetweenThings = 1000;
 
-        lastSerialNumber = Long.parseLong( cu.prompt( "enter the starting serialNumber", ""+lastSerialNumber  ));
-		serialNumber = lastSerialNumber;
+		String lastSerialNumber;
+		HashMap<String, DBObject> stats = cu.getThingsPerThingType();
+		if (stats.get("sharafRFID") == null) {
+			lastSerialNumber = "1";
+		} else
+		{
+			try
+			{
+				lastSerialNumber = (Long.parseLong( stats.get( "sharafRFID" ).get( "max" ).toString() ) + 1) + "";
+			} catch ( NumberFormatException e )
+			{
+				lastSerialNumber = (Long.parseLong( stats.get( "sharafRFID" ).get( "count" ).toString() ) + 1) + "";
+			}
+		}
 
+		lastSerialNumber = "000000000000000000000" + cu.prompt( "enter Starting serialNumber", lastSerialNumber );
+
+		lastSerialNumber = lastSerialNumber.substring( lastSerialNumber.length() - 21, lastSerialNumber.length() );
+		serialNumber = Long.parseLong( lastSerialNumber);
 
 		//quantity
 		lastQuantity = Long.parseLong( cu.prompt( "enter the quantity of things to create", ""+lastQuantity  ));
 		Long quantity = lastQuantity;
 
 		//things per blink
-		THING_PER_BLINK = Integer.parseInt( cu.prompt( "enter the quantity of things per blink message", "" + THING_PER_BLINK ) );
+		UPDATES_PER_BLINK = Integer.parseInt( cu.prompt( "enter the quantity of things per blink message", "" + UPDATES_PER_BLINK ) );
 
 		//delay between things
 		delayBetweenThings = Integer.parseInt( cu.prompt( "enter the quantity of milliseconds betweeen blink", "" + delayBetweenThings ) );
@@ -282,7 +298,7 @@ public class SharafEnterprise implements controllerInterface
 		TimerUtils tu = new TimerUtils();
 		tu.mark();
 
-		for (Long i=0L; i < quantity/THING_PER_BLINK; i++) {
+		for (Long i=0L; i < quantity/UPDATES_PER_BLINK; i++) {
 			createHundredThings(delayBetweenThings);
 			tu.mark();
 			System.out.println("      created:" + created + "  time:" + tu.getLastDelt() + " ms.  sn:" + sequenceNumber);
@@ -379,9 +395,9 @@ public class SharafEnterprise implements controllerInterface
 
 		thingsToChange = Long.parseLong( cu.prompt( "How many things wants to change?", ""+thingsToChange  ));
 
-		delayBetweenThings = Integer.parseInt( cu.prompt( "How many miliseconds (ms) between each blink ?", "" + delayBetweenThings ) );
-
 		thingsPerBlink = Integer.parseInt( cu.prompt( "How many things in each blink message?", "" + thingsPerBlink ) );
+
+		delayBetweenThings = Integer.parseInt( cu.prompt( "How many miliseconds (ms) between each blink ?", "" + delayBetweenThings ) );
 
 		System.out.print(cu.black() + "\nChanging " + thingsToChange + " things with a delay of " + delayBetweenThings + " ms.");
 
