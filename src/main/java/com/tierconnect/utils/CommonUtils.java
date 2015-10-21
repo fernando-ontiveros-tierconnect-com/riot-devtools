@@ -3,6 +3,7 @@ package com.tierconnect.utils;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.CommandResult;
 import com.mongodb.DB;
@@ -36,6 +37,7 @@ import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -431,17 +433,27 @@ public class CommonUtils
 					String udfclass = "";
 					if (fieldTwo.getKey().equals( "value" ) )
 					{
-						udfclass = fieldTwo.getValue().getClass().getName();
-						if (udfclass.equals( "java.lang.String" )) {
-							udfclass = "String";
+						if (fieldTwo.getValue() != null)
+						{
+							udfclass = fieldTwo.getValue().getClass().getName();
+							if( udfclass.equals( "java.lang.String" ) )
+							{
+								udfclass = "String";
+							}
+							if( udfclass.equals( "java.lang.Long" ) )
+							{
+								udfclass = "Long";
+							}
+							if( udfclass.equals( "java.lang.Double" ) )
+							{
+								udfclass = "Double";
+							}
+							if( udfclass.equals( "com.mongodb.BasicDBObject" ) )
+							{
+								udfclass = "DBObject";
+							}
+							udfclass = "(" + udfclass + ")";
 						}
-						if (udfclass.equals( "java.lang.Long" )) {
-							udfclass = "Long";
-						}
-						if (udfclass.equals( "java.lang.Double" )) {
-							udfclass = "Double";
-						}
-						udfclass = "(" + udfclass + ")";
 					}
                     //if (fieldTwo.getValue().getClass().equals(String.class)) {
                     System.out.println(maxpad + "  " + black() + fieldTwo.getKey() + black() + udfclass + ": " + blue() + fieldTwo.getValue() + black());
@@ -1089,6 +1101,73 @@ public class CommonUtils
 		}
 		System.out.println ("+-------------------+----------+------------+------------+");
 
+
+	}
+
+	private String clazz( Object object)
+	{
+		String clazz = object.getClass().toString();
+
+		if (clazz.equals( "class com.mongodb.BasicDBObject" )) {
+			return "BasicDBObject";
+		}
+		if (clazz.equals( "class java.lang.String" )) {
+			return "String";
+		}
+		if (clazz.equals( "class java.lang.Long" )) {
+			return "Long";
+		}
+		if (clazz.equals( "class java.lang.Double" )) {
+			return "Double";
+		}
+		if (clazz.equals( "class java.lang.Date" )) {
+			return "Date";
+		}
+		return clazz;
+	}
+
+	public void displayTimeseries( String serialNumber, String thingTypeCode) {
+		DBCollection thingsCollection = db.getCollection( "things" );
+		DBCollection timeseriesCollection = db.getCollection( "timeseries" );
+
+		DBObject thing = thingsCollection.findOne( new BasicDBObject("serialNumber", serialNumber).append( "thingTypeCode", thingTypeCode ));
+		if (thing == null) {
+			return;
+		}
+
+		BasicDBObject queryDoc   = new BasicDBObject("_id.id", thing.get("_id"));
+		BasicDBObject fieldsDoc  = new BasicDBObject("time", 1).append( "value", 1 );
+		BasicDBObject orderByDoc = new BasicDBObject("_id.segment", -1);
+		DBObject timeserie = timeseriesCollection.findOne( queryDoc, fieldsDoc, orderByDoc );
+		if (timeserie == null) {
+			return;
+		}
+		BasicDBList timeList  = (BasicDBList)timeserie.get("time");
+		BasicDBList valueList = (BasicDBList)timeserie.get("value");
+
+		System.out.println ("+-------------------+----------+------------+------------+");
+		String pad = "        ";
+		for (int index=0; index < timeList.size(); index++)
+		{
+			Object timeObject = (Object)timeList.get(index);
+			if ( timeObject instanceof Date) {
+				System.out.print( (Date) timeObject);
+				System.out.println( " : {" );
+
+				BasicDBObject valueObject = (BasicDBObject)valueList.get(index);
+				Iterator<String> it = valueObject.keySet().iterator();
+				while (it.hasNext()) {
+					String key = it.next();
+					BasicDBObject value = (BasicDBObject)valueObject.get(key);
+					System.out.print( pad + blue() + key + black() + "(" + clazz(value.get("value"))+"):" );
+					System.out.print(value.get("value").toString());
+					System.out.println();
+				}
+				System.out.println( "}");
+			}
+
+		}
+		System.out.println ("+-------------------+----------+------------+------------+");
 
 	}
 }

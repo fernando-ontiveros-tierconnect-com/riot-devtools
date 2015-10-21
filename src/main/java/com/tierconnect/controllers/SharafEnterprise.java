@@ -26,8 +26,8 @@ public class SharafEnterprise implements controllerInterface
 {
 	CommonUtils cu;
 
-	Integer INSERTS_PER_BLINK = 100;
-	Integer UPDATES_PER_BLINK = 200;
+	Integer INSERTS_PER_BLINK = 40;
+	Integer UPDATES_PER_BLINK = 150;
 	Long serialNumber     = 0L;
 	Long lastQuantity = 10000L;
 	Long sequenceNumber = 0L;
@@ -288,7 +288,7 @@ public class SharafEnterprise implements controllerInterface
 		Long quantity = lastQuantity;
 
 		//things per blink
-		UPDATES_PER_BLINK = Integer.parseInt( cu.prompt( "enter the quantity of things per blink message", "" + UPDATES_PER_BLINK ) );
+		INSERTS_PER_BLINK = Integer.parseInt( cu.prompt( "enter the quantity of things per blink message", "" + INSERTS_PER_BLINK ) );
 
 		//delay between things
 		delayBetweenThings = Integer.parseInt( cu.prompt( "enter the quantity of milliseconds betweeen blink", "" + delayBetweenThings ) );
@@ -298,7 +298,7 @@ public class SharafEnterprise implements controllerInterface
 		TimerUtils tu = new TimerUtils();
 		tu.mark();
 
-		for (Long i=0L; i < quantity/UPDATES_PER_BLINK; i++) {
+		for (Long i=0L; i < quantity/INSERTS_PER_BLINK; i++) {
 			createHundredThings(delayBetweenThings);
 			tu.mark();
 			System.out.println("      created:" + created + "  time:" + tu.getLastDelt() + " ms.  sn:" + sequenceNumber);

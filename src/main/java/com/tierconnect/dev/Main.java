@@ -35,7 +35,7 @@ public class Main {
 	int saving = 0;
 
 	String cmdClasses[] = {
-			"basicBlink",
+			"deprecadted basicBlink",
 			"zonesBlink",
 			"nativeObjects",
 			"SharafEnterprise",

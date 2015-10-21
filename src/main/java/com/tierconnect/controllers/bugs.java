@@ -349,7 +349,7 @@ public class bugs implements controllerInterface
 			{
 				System.out.print( cu.ltrim( " ", 15 ) );
 			}
-			System.out.print( "|" );
+			//System.out.print( "|" );
 			if (zone != null)
 			{
 				Long dwellTime = Long.parseLong( zone.get( "dwellTime" ).toString() ) + 4*60*60*1000;
@@ -357,7 +357,7 @@ public class bugs implements controllerInterface
 			} else {
 				System.out.print( cu.ltrim( " ", 9 ));
 			}
-			System.out.print ("||");
+			System.out.print ("|");
 
 			//lr
 			if (lr != null)
@@ -367,7 +367,7 @@ public class bugs implements controllerInterface
 			} else {
 				System.out.print( cu.ltrim( " ", 10 ));
 			}
-			System.out.print( "|" );
+			//System.out.print( "|" );
 			if (lr != null)
 			{
 				Long dwellTime = Long.parseLong( lr.get( "dwellTime" ).toString() ) + 4*60*60*1000;
@@ -375,7 +375,7 @@ public class bugs implements controllerInterface
 			} else {
 				System.out.print( cu.ltrim( " ", 9 ));
 			}
-			System.out.print ("||");
+			System.out.print ("|");
 
 			//status
 			if (status != null)
@@ -384,7 +384,7 @@ public class bugs implements controllerInterface
 			} else {
 				System.out.print( cu.ltrim( " ", 10 ) );
 			}
-			System.out.print( "|" );
+			//System.out.print( "|" );
 			if (status != null)
 			{
 				Long dwellTime = Long.parseLong( status.get( "dwellTime" ).toString() ) + 4*60*60*1000;
@@ -499,6 +499,35 @@ public class bugs implements controllerInterface
 
 	}
 
+
+	public void sendBlinkInvalidNativeObjects(String topic, Long time, String serialNumber )
+	{
+		StringBuffer sb = new StringBuffer();
+		Random r = new Random();
+
+		sequenceNumber = cu.getSequenceNumber();
+		sb.append( " sn," + sequenceNumber + "\n" );
+		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
+
+		System.out.println(	cu.blue() + "sn," + sequenceNumber + cu.black() );
+
+		String zoneValue  = "zone-"  + (r.nextInt( 900 )+100);
+		String shiftValue = "shift-" + (r.nextInt( 900 )+100);
+		String lrValue    = "lr-"    + (r.nextInt( 900 )+100);
+		String groupValue = "group-" + (r.nextInt( 900 )+100);
+		String status = "(" + zoneValue + "," + shiftValue + "," + lrValue + "," + groupValue + ")";
+
+		sequenceNumber = cu.getSequenceNumber();
+
+		sb.append( serialNumber + "," + time + ",zone,"          + zoneValue + "\n" );
+		sb.append( serialNumber + "," + time + ",shift,"         + shiftValue + "\n" );
+		sb.append( serialNumber + "," + time + ",logicalReader," + lrValue + "\n" );
+		sb.append( serialNumber + "," + time + ",group,"         + groupValue + "\n" );
+		sb.append( serialNumber + "," + time + ",status,"        + "\"" + status + "\"" + "\n" );
+
+		cu.publishSyncMessage( topic, sb.toString() );
+	}
+
 	public void pressAnyKey()
 	{
 		System.out.println(cu.black() +  "\npress [enter] to continue");
@@ -586,6 +615,36 @@ public class bugs implements controllerInterface
 
 	}
 
+	public void ignoreInvalidNative()
+	{
+		//send a full message with invalid native objects and a valid status value
+		//send second blink changing zone
+		//show results
+
+		Scanner in;
+		in = new Scanner(System.in);
+
+		String serialNumber = "";
+
+		final String defaultRfidThingTypeCode = "default_rfid_thingtype";
+
+		lastSerialNumber = cu.getLastSerialForThingType(defaultRfidThingTypeCode);
+
+		lastSerialNumber = cu.formatSerialNumber( cu.prompt( "enter serialNumber", lastSerialNumber ));
+		serialNumber = lastSerialNumber;
+
+		String topic = "/v1/data/ALEB/" + defaultRfidThingTypeCode;
+		Long time;
+
+		System.out.println( );
+		System.out.println( cu.blue() + "1. send a message with invalid native object and a new value for status fieldr" + cu.black() );
+
+		DBObject prevThing = cu.getThing(serialNumber, defaultRfidThingTypeCode);
+
+		sendBlinkInvalidNativeObjects( topic, new Date().getTime(), serialNumber );
+		cu.sleep( 1000 );
+		cu.diffThings(cu.getThing(serialNumber, defaultRfidThingTypeCode), prevThing);
+	}
 
 	public void execute() {
 		setup();
@@ -595,6 +654,7 @@ public class bugs implements controllerInterface
 		options.put("2", "RIOT-6241 Door Event Filters");
 		options.put("3", "RIOT-6337 Queued Mqtt messages are processed multiple times");
 		options.put("4", "RIOT-6642 dwellTime value is not being calculated correctly for each blink");
+		options.put("5", "RIOT-6779 ignore zone field when its value does not match with any existing zone");
 		//options.put("9", "send a JSON to udf");
 
 		Integer option = 0;
@@ -619,6 +679,11 @@ public class bugs implements controllerInterface
 				if (option == 3 )
 				{
 					dwellTimeIssue();
+				}
+
+				if (option == 4 )
+				{
+					ignoreInvalidNative();
 				}
 
 				System.out.println(cu.black() +  "\npress [enter] to continue");

@@ -23,7 +23,7 @@ import java.util.Scanner;
 public class zonesBlink  implements controllerInterface {
 
 	CommonUtils cu;
-	String lastSerialNumber = "000000000000000000001";
+	String lastSerialNumber = "000000000000000000100";
 	String thingTypeCode = "default_rfid_thingtype";
 
 	DBCollection thingsCollection;
@@ -34,7 +34,7 @@ public class zonesBlink  implements controllerInterface {
 
 
 	public String getDescription() {
-		return "send Zone changes blinks to Ale Bridge";
+		return "send Zone blinks to Ale Bridge";
 	}
 
 	public void setup()
@@ -42,58 +42,92 @@ public class zonesBlink  implements controllerInterface {
 		thingsCollection        = cu.db.getCollection("things");
 	}
 
-	private void sendZoneBlink(String tag, String zone) {
-		StringBuffer sb = new StringBuffer();
-		Scanner in;
-		in = new Scanner(System.in);
+	private void getThingFromMongo() {
+		String serialNumber;
+
+		serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber",lastSerialNumber );
+		lastSerialNumber = serialNumber.substring(serialNumber.length()-21, serialNumber.length());
+		serialNumber = lastSerialNumber;
+
+		thingTypeCode = cu.prompt( "enter the thingTypeCode",thingTypeCode );
+
+		System.out.println("serialNumber: " + cu.blue() + serialNumber + cu.black() + "");
+		System.out.println("   thingType: " + cu.blue() + thingTypeCode + cu.black() + "");
+
+		DBObject prevThing = cu.getThing(serialNumber, thingTypeCode);
+
+		cu.displayThing(prevThing);
+	}
+
+	private void getThingTimeseriesFromMongo() {
+		String serialNumber;
+
+		serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber",lastSerialNumber );
+		lastSerialNumber = serialNumber.substring(serialNumber.length()-21, serialNumber.length());
+		serialNumber = lastSerialNumber;
+
+		thingTypeCode = cu.prompt( "enter the thingTypeCode",thingTypeCode );
+
+		System.out.println("serialNumber: " + cu.blue() + serialNumber + cu.black() + "");
+		System.out.println("   thingType: " + cu.blue() + thingTypeCode + cu.black() + "");
+
+		cu.displayTimeseries( serialNumber, thingTypeCode );
+
+	}
+
+	private void sendZoneBlink(String zone) {
+		String serialNumber;
+
+		serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber",lastSerialNumber );
+		lastSerialNumber = serialNumber.substring(serialNumber.length()-21, serialNumber.length());
+		serialNumber = lastSerialNumber;
+
+		thingTypeCode = cu.prompt( "enter the thingTypeCode",thingTypeCode );
+
+		System.out.println("serialNumber: " + cu.blue() + serialNumber + cu.black() + "");
+		System.out.println("   thingType: " + cu.blue() + thingTypeCode + cu.black() + "");
 
 		Random r = new Random();
 		Integer posx = 0, posy = 0;
-		String serialNumber = "";
+
 		String lr = "LR5";
 
-		if (tag == null) {
-			serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber", lastSerialNumber );
-			lastSerialNumber = serialNumber.substring( serialNumber.length() - 21, serialNumber.length() );
-			tag = lastSerialNumber;
-
-			thingTypeCode = cu.prompt( "enter the thingTypeCode", thingTypeCode );
-
-		}
+		final int distance = 3;
 
 		if (zone == "Stockroom") {
-			posx = 37;
-			posy = 44;
+			posx = 37 + r.nextInt( distance ) - distance/2;
+			posy = 44 + r.nextInt( distance ) - distance/2;
 		}
 		if (zone == "Salesfloor") {
-			posx = 59;
-			posy = 25;
+			posx = 59 + r.nextInt( distance ) - distance/2;
+			posy = 25 + r.nextInt( distance ) - distance/2;
 		}
 		if (zone == "POS") {
-			posx = 18;
-			posy = 12;
+			posx = 18 + r.nextInt( distance ) - distance/2;
+			posy = 12 + r.nextInt( distance ) - distance/2;
 		}
 		if (zone == "Entrance") {
-			posx = 7;
-			posy = 7;
+			posx = 7 + r.nextInt( distance ) - distance/2;
+			posy = 7 + r.nextInt( distance ) - distance/2;
 		}
 
 		if (zone == "Unknown") {
-			posx = 250;
-			posy = 250;
+			posx = 250 + r.nextInt( distance ) - distance/2;
+			posy = 250 + r.nextInt( distance ) - distance/2;
 		}
 
+		StringBuilder sb = new StringBuilder();
 		sb.append("EPOCH,NOW\n");
 		sb.append("DELT,REL\n");
 		sb.append("\n");
 		sb.append("CS,-118.443969,34.048092,0.0,20.0,ft\n");
-		sb.append("LOC, 00:00:00," + tag + "," + posx + "," + posy + ",0," + lr + ",x3ed9371\n");
+		sb.append("LOC, 00:00:00," + serialNumber + "," + posx + "," + posy + ",0," + lr + ",x3ed9371\n");
 
-		System.out.println("serialNumber: " + cu.blue() + tag + cu.black() + "");
+		System.out.println("serialNumber: " + cu.blue() + serialNumber + cu.black() + "");
 		System.out.println("   locationX: " + cu.blue() + posx + cu.black() + "");
 		System.out.println("   locationY: " + cu.blue() + posy + cu.black() + "");
 
-		DBObject prevThing = cu.getThing(tag, thingTypeCode);
+		DBObject prevThing = cu.getThing(serialNumber, thingTypeCode);
 
 		OutputStream output = new OutputStream()
 		{
@@ -119,8 +153,8 @@ public class zonesBlink  implements controllerInterface {
 			ALEPost alep = new ALEPost( args );
 			alep.run( new ByteArrayInputStream(output.toString().getBytes()) );
 
-			cu.sleep(1000);
-			cu.diffThings(cu.getThing(tag, thingTypeCode), prevThing);
+			cu.sleep(1100);
+			cu.diffThings(cu.getThing(serialNumber, thingTypeCode), prevThing);
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -139,50 +173,38 @@ public class zonesBlink  implements controllerInterface {
 		setup();
 		HashMap<String, String> options = new LinkedHashMap<String,String>();
 
-		options.put("1", "send 000000000000000000100 to Stockroom");
-		options.put("2", "send 000000000000000000100 to Salesfloor");
-		options.put("3", "send 000000000000000000100 to POS");
-		options.put("4", "send 000000000000000000100 to Entrance");
-		options.put("5", "send 000000000000000000100 to Unknown");
-		options.put("6", "send a tag to Stockroom");
-		options.put("7", "send a tag to SalesFloor");
-		options.put("8", "send a tag to POS");
-		options.put("9", "send a tag to Entrance");
-		options.put("10", "send a tag to Unknown");
+		options.put("1", "send a tag to Entrance");
+		options.put("2", "send a tag to POS");
+		options.put("3", "send a tag to Stockroom");
+		options.put("4", "send a tag to SalesFloor");
+		options.put("5", "send a tag to Unknown");
+		options.put("6", "get Thing from Mongo");
+		options.put("7", "get Timeseries from Mongo");
 
 		Integer option = 0;
 		while (option != null) {
 			option = cu.showMenu("Zone blink options", options );
 			if (option != null) {
 				if (option == 0) {
-					sendZoneBlink("000000000000000000100", "Stockroom");
+					sendZoneBlink("Entrance");
 				}
 				if (option == 1) {
-					sendZoneBlink("000000000000000000100", "Salesfloor");
+					sendZoneBlink("POS");
 				}
 				if (option == 2) {
-					sendZoneBlink("000000000000000000100", "POS");
+					sendZoneBlink("Stockroom");
 				}
 				if (option == 3) {
-					sendZoneBlink("000000000000000000100", "Entrance");
+					sendZoneBlink("Salesfloor");
 				}
 				if (option == 4) {
-					sendZoneBlink("000000000000000000100", "Unknown");
+					sendZoneBlink("Unknown");
 				}
 				if (option == 5) {
-					sendZoneBlink(null, "Stockroom");
+					getThingFromMongo();
 				}
 				if (option == 6) {
-					sendZoneBlink(null, "Salesfloor");
-				}
-				if (option == 7) {
-					sendZoneBlink(null, "POS");
-				}
-				if (option == 8) {
-					sendZoneBlink(null, "Entrance");
-				}
-				if (option == 9) {
-					sendZoneBlink(null, "Unknown");
+					getThingTimeseriesFromMongo();
 				}
 
 				System.out.println(cu.black() +  "\npress [enter] to continue");

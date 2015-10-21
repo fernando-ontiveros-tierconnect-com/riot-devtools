@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -722,7 +723,7 @@ public class parentChildren implements controllerInterface
 
 	public void execute() {
 		setup();
-		HashMap<String, String> options = new HashMap<String,String>();
+		HashMap<String, String> options = new LinkedHashMap<String,String>();
 
 		options.put("1", "create ThingTypes ");
 		options.put("2", "create Parent-Child things");
