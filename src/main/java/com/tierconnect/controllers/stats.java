@@ -110,8 +110,13 @@ public class stats implements controllerInterface
 			}
 			System.out.print( "|" + cu.rtrim( doc.get("parent"),5) + "|" + cu.rtrim( doc.get("total"),5 ) + "|" + cu.rtrim( doc.get("thingsCreated"),7) );
 
-			long ts = (long) (1000 * Long.valueOf( doc.get("things").toString() )  / Long.valueOf( doc.get("total").toString() ));
-			long fs = (long) (1000 * Long.valueOf( doc.get("fields").toString() )  / Long.valueOf( doc.get("total").toString() ));
+			long ts = 0;
+			long fs = 0;
+			if (Long.valueOf( doc.get("total").toString()) != 0L )
+			{
+				ts = (long) (1000 * Long.valueOf( doc.get( "things" ).toString() ) / Long.valueOf( doc.get( "total" ).toString() ));
+				fs = (long) (1000 * Long.valueOf( doc.get( "fields" ).toString() ) / Long.valueOf( doc.get( "total" ).toString() ));
+			}
 
 			System.out.print( "|" + cu.rtrim( doc.get("things"), 4) + "|" + cu.rtrim( ts, 6 ));
 			System.out.print( "|" + cu.rtrim( doc.get("fields"), 4) + "|" + cu.rtrim( fs, 6 ) );
@@ -268,42 +273,6 @@ public class stats implements controllerInterface
 		while (it.hasNext()) {
 			DBObject doc = it.next();
 			System.out.println( doc );
-/*
-			System.out.print( "|" + cu.rtrim( doc.get("time").toString().substring(11,19 ),8)  );
-			System.out.print( "|" + cu.rtrim( doc.get("sqn"),5)  );
-			System.out.print( "|" + cu.rtrim( doc.get("init"),5 ) + "|" + cu.rtrim(doc.get("loop1"), 5)  );
-			System.out.print( "|" + cu.rtrim( doc.get("native"),5) + "|" + cu.rtrim( doc.get("esper"),5 ) + "|" + cu.rtrim(doc.get("fmc"), 5)  );
-			System.out.print( "|" + cu.rtrim( doc.get("update"),5) + "|" + cu.rtrim( doc.get("save"),5 ) + "|" + cu.rtrim(doc.get("history"), 5)  );
-			System.out.print( "|" + cu.rtrim( doc.get("parent"),5) + "|" + cu.rtrim( doc.get("total"),5 ) + "|" + cu.rtrim( doc.get("thingsCreated"),7) );
-
-			long ts = (long) (1000 * Long.valueOf( doc.get("things").toString() )  / Long.valueOf( doc.get("total").toString() ));
-			long fs = (long) (1000 * Long.valueOf( doc.get("fields").toString() )  / Long.valueOf( doc.get("total").toString() ));
-
-			System.out.print( "|" + cu.rtrim( doc.get("things"), 4) + "|" + cu.rtrim( ts, 6 ));
-			System.out.print( "|" + cu.rtrim( doc.get("fields"), 4) + "|" + cu.rtrim( fs, 6 ) );
-			System.out.println("|");
-
-			time = (Date)doc.get( "time" );
-
-			times ++;
-
-			sinit   += Long.valueOf( doc.get("init").toString());
-			sloop1  += Long.valueOf( doc.get("loop1").toString());
-			snative += Long.valueOf( doc.get("native").toString());
-			sesper  += Long.valueOf( doc.get("esper").toString());
-			sfmc    += Long.valueOf( doc.get("fmc").toString());
-			supdate += Long.valueOf( doc.get("update").toString());
-			ssave   += Long.valueOf( doc.get("save").toString());
-			sseries += Long.valueOf( doc.get("history").toString());
-			sparent += Long.valueOf( doc.get("parent").toString());
-			stotal += Long.valueOf( doc.get("total").toString());
-			sthings += Long.valueOf( doc.get("things").toString());
-			sfields += Long.valueOf( doc.get("fields").toString());
-			if (times % 10 == 0 ) {
-				displayALEBlogFooter();
-				displayALEBlogHeader();
-			}
-			*/
 		}
 
 

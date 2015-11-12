@@ -1,0 +1,270 @@
+{
+"values" : [
+{
+  "code": "gate1",
+  "color": "#F04000",
+  "name": "Gate 1",
+  "description": "Gate 1",
+  "group.id": 3,
+  "zoneGroup.id": 1,
+  "localMap": {
+    "id": 1
+  },
+  "zoneType": {
+    "zoneTypeCode": null,
+    "name": "Default Zone Type",
+    "description": null,
+    "id": 1,
+    "zoneProperties": [
+      {
+        "name": "Default Property",
+        "id": 1,
+        "type": 1,
+        "value": ""
+      }
+    ]
+  },
+  "zonePoints": [
+    {
+      "x": -118.44393,
+      "y":   34.04791,
+      "id": 1,
+      "arrayIndex": 0
+    },
+    {
+      "x": -118.44397,
+      "y":   34.04791,
+      "id": 2,
+      "arrayIndex": 1
+    },
+    {
+      "x": -118.44398,
+      "y":   34.04794,
+      "id": 3,
+      "arrayIndex": 2
+    },
+    {
+      "x": -118.44394,
+      "y":   34.04794,
+      "id": 4,
+      "arrayIndex": 3
+    }
+  ]
+}
+,
+{
+  "code": "gate2",
+  "color": "#F04000",
+  "name": "Gate 2",
+  "description": "Gate 2",
+  "group.id": 3,
+  "zoneGroup.id": 1,
+  "localMap": {
+    "id": 1
+  },
+  "zoneType": {
+    "zoneTypeCode": null,
+    "name": "Default Zone Type",
+    "description": null,
+    "id": 1,
+    "zoneProperties": [
+      {
+        "name": "Default Property",
+        "id": 1,
+        "type": 1,
+        "value": ""
+      }
+    ]
+  },
+  "zonePoints": [
+    {
+      "x": -118.44387,
+      "y":   34.04793,
+      "id": 1,
+      "arrayIndex": 0
+    },
+    {
+      "x": -118.44391,
+      "y":   34.04793,
+      "id": 2,
+      "arrayIndex": 1
+    },
+    {
+      "x": -118.44392,
+      "y":   34.04796,
+      "id": 3,
+      "arrayIndex": 2
+    },
+    {
+      "x": -118.44388,
+      "y":   34.04796,
+      "id": 4,
+      "arrayIndex": 3
+    }
+  ]
+}
+,
+{
+  "code": "gate3",
+  "color": "#F04000",
+  "name": "Gate 3",
+  "description": "Gate 3",
+  "group.id": 3,
+  "zoneGroup.id": 1,
+  "localMap": {
+    "id": 1
+  },
+  "zoneType": {
+    "zoneTypeCode": null,
+    "name": "Default Zone Type",
+    "description": null,
+    "id": 1,
+    "zoneProperties": [{"name": "Default Property", "id": 1, "type": 1, "value": ""}]
+  },
+  "zonePoints": [
+    {
+      "x": -118.44380,
+      "y":   34.04795,
+      "id": 1,
+      "arrayIndex": 0
+    },
+    {
+      "x": -118.44384,
+      "y":   34.04795,
+      "id": 2,
+      "arrayIndex": 1
+    },
+    {
+      "x": -118.44385,
+      "y":   34.04798,
+      "id": 3,
+      "arrayIndex": 2
+    },
+    {
+      "x": -118.44381,
+      "y":   34.04798,
+      "id": 4,
+      "arrayIndex": 3
+    }
+  ]
+}
+,
+{
+  "code": "gate4",
+  "color": "#F04000",
+  "name": "Gate 4",
+  "description": "Gate 4",
+  "group.id": 3,
+  "zoneGroup.id": 1,
+  "localMap": {"id": 1},
+  "zoneType": {
+    "zoneTypeCode": null,
+    "name": "Default Zone Type",
+    "description": null,
+    "id": 1,
+    "zoneProperties": [{"name": "Default Property", "id": 1, "type": 1, "value": ""}]
+  },
+  "zonePoints": [
+    {
+      "x": -118.44375,
+      "y":   34.04797,
+      "id": 1, "arrayIndex": 0
+    },
+    {
+      "x": -118.44379,
+      "y":   34.04797,
+      "id": 2, "arrayIndex": 1
+    },
+    {
+      "x": -118.44380,
+      "y":   34.04800,
+      "id": 3, "arrayIndex": 2
+    },
+    {
+      "x": -118.44376,
+      "y":   34.04800,
+      "id": 4, "arrayIndex": 3
+    }
+  ]
+}
+,
+{
+  "code": "gate5",
+  "color": "#F04000",
+  "name": "Gate 5",
+  "description": "Gate 5",
+  "group.id": 3,
+  "zoneGroup.id": 1,
+  "localMap": {"id": 1},
+  "zoneType": {
+    "zoneTypeCode": null,
+    "name": "Default Zone Type",
+    "description": null,
+    "id": 1,
+    "zoneProperties": [{"name": "Default Property", "id": 1, "type": 1, "value": ""}]
+  },
+  "zonePoints": [
+    {
+      "x": -118.44369,
+      "y":   34.04799,
+      "id": 1, "arrayIndex": 0
+    },
+    {
+      "x": -118.44373,
+      "y":   34.04799,
+      "id": 2, "arrayIndex": 1
+    },
+    {
+      "x": -118.44374,
+      "y":   34.04802,
+      "id": 3, "arrayIndex": 2
+    },
+    {
+      "x": -118.44370,
+      "y":   34.04802,
+      "id": 4, "arrayIndex": 3
+    }
+  ]
+}
+,
+{
+  "code": "gate6",
+  "color": "#F04000",
+  "name": "Gate 6",
+  "description": "Gate 6",
+  "group.id": 3,
+  "zoneGroup.id": 1,
+  "localMap": {"id": 1},
+  "zoneType": {
+    "zoneTypeCode": null,
+    "name": "Default Zone Type",
+    "description": null,
+    "id": 1,
+    "zoneProperties": [{"name": "Default Property", "id": 1, "type": 1, "value": ""}]
+  },
+  "zonePoints": [
+    {
+      "x": -118.44363,
+      "y":   34.04801,
+      "id": 1, "arrayIndex": 0
+    },
+    {
+      "x": -118.44367,
+      "y":   34.04801,
+      "id": 2, "arrayIndex": 1
+    },
+    {
+      "x": -118.44368,
+      "y":   34.04804,
+      "id": 3, "arrayIndex": 2
+    },
+    {
+      "x": -118.44364,
+      "y":   34.04804,
+      "id": 4, "arrayIndex": 3
+    }
+  ]
+}
+
+    ]
+}

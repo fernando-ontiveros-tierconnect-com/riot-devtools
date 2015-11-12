@@ -86,6 +86,7 @@ public class nativeObjects implements controllerInterface
 		HashMap<String,Object> res;
 
 		try {
+			//logical readers
 			System.out.println( cu.blue() + "creating logical readers for tests" + cu.black());
 
 			String body = cu.read( "/coreServices/logicalReader.txt" );
@@ -103,10 +104,11 @@ public class nativeObjects implements controllerInterface
 				Map<String,Object> map =  values.get( i );
 				ObjectMapper mapper2 = new ObjectMapper();
 				String jsonFromMap = mapper.writeValueAsString(map);
-				System.out.println( "Got " + jsonFromMap );
+				//System.out.println( "Got " + jsonFromMap );
 				cu.httpPutMessage( "logicalReader", jsonFromMap);
 			}
 
+			//shifts
 			System.out.println( cu.blue() + "creating Shifts for tests" + cu.black());
 
 			body = cu.read( "/coreServices/shift.txt" );
@@ -119,9 +121,27 @@ public class nativeObjects implements controllerInterface
 			{
 				Map<String,Object> map =  values.get( i );
 				String jsonFromMap = mapper.writeValueAsString(map);
-				System.out.println( "Got " + jsonFromMap );
+				//System.out.println( "Got " + jsonFromMap );
 				cu.httpPutMessage( "shift", jsonFromMap);
 			}
+
+			//zones
+			System.out.println( cu.blue() + "creating Zones for tests" + cu.black());
+
+			body = cu.read( "/coreServices/zone.txt" );
+
+			res = mapper.readValue(body, typeRef);
+
+			values = (ArrayList<HashMap<String, Object>>)res.get("values" );
+
+			for ( int i = 0; i < values.size(); i++ )
+			{
+				Map<String,Object> map =  values.get( i );
+				String jsonFromMap = mapper.writeValueAsString(map);
+				//System.out.println( "Got " + jsonFromMap );
+				cu.httpPutMessage( "zone", jsonFromMap);
+			}
+
 		} catch (Exception e) {
 			System.out.println(e.getCause());
 		}

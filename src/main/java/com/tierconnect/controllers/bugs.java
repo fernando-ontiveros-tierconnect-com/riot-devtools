@@ -28,6 +28,8 @@ public class bugs implements controllerInterface
 
 	DBCollection thingsCollection;
 
+	Date startDate;
+
 	String defaultRfidThingTypeCode = "default_rfid_thingtype";
 	String thingTypeCode = "default_gps_thingtype";
 
@@ -398,6 +400,120 @@ public class bugs implements controllerInterface
 		System.out.println();
 	}
 
+	public int showHttpPoolResults()
+	{
+		DBCollection ts = cu.db.getCollection( "httpPoolTest" );
+
+		DBCursor cursor = ts.find( new BasicDBObject() ).sort( new BasicDBObject("serialNumber", -1));
+
+		int sum = 0, td = 0;
+
+		while (cursor.hasNext())
+		{
+			BasicDBObject record = (BasicDBObject) cursor.next();
+
+			System.out.print( "|" );
+			System.out.print( cu.rtrim( record.get( "serialNumber" ), 18 ) );
+
+			System.out.print( "|" );
+			System.out.print( cu.ltrim( record.get( "count" ), 6 ) );
+
+			sum += Integer.parseInt( record.get( "count" ).toString());
+
+			td ++;
+			if (td % 4 == 0)
+			{
+				System.out.println( "|" );
+			}
+		}
+		System.out.println( );
+		return sum;
+	}
+
+	public void showResultsExtended(String serialNumber)
+	{
+		DBCollection ts = cu.db.getCollection( "thingSnapshots" );
+
+		DBCursor cursor = ts.find( new BasicDBObject( "value.serialNumber", serialNumber )).sort( new BasicDBObject("time", -1));
+
+		while (cursor.hasNext())
+		{
+			BasicDBObject snapshot = (BasicDBObject)cursor.next();
+			BasicDBObject value  = (BasicDBObject)snapshot.get("value");
+			Date time   = (Date)snapshot.get("time");
+			BasicDBObject zone   = (BasicDBObject)value.get("zone");
+			BasicDBObject registered = (BasicDBObject)value.get("registered");
+			BasicDBObject status = (BasicDBObject)value.get("status");
+			BasicDBObject enode = (BasicDBObject)value.get("eNode");
+
+			System.out.print ("||");
+
+			//zone
+			System.out.print (cu.ltrim( displayTime( time ), 8 ) + "|");
+			if (zone != null)
+			{
+				BasicDBObject zoneObj = (BasicDBObject)zone.get( "value" );
+				System.out.print( cu.ltrim( zoneObj.get( "name" ).toString(), 15 ) );
+			} else
+			{
+				System.out.print( cu.ltrim( " ", 15 ) );
+			}
+
+			if (zone != null)
+			{
+				Long dwellTime = Long.parseLong( zone.get( "dwellTime" ).toString() ) + 4*60*60*1000;
+				System.out.print( cu.ltrim( displayTime( new Date(dwellTime) ), 9 ));
+			} else {
+				System.out.print( cu.ltrim( " ", 9 ));
+			}
+			System.out.print ("|");
+
+			//status
+			if (status != null)
+			{
+				System.out.print( cu.ltrim( status.get( "value" ).toString(), 10 ) );
+			} else {
+				System.out.print( cu.ltrim( " ", 10 ) );
+			}
+			//System.out.print( "|" );
+			if (status != null)
+			{
+				Long dwellTime = Long.parseLong( status.get( "dwellTime" ).toString() ) + 4*60*60*1000;
+				System.out.print( cu.ltrim( displayTime( new Date(dwellTime) ), 9 ));
+			} else {
+				System.out.print( cu.ltrim( " ", 9 ));
+			}
+			System.out.print ("|");
+
+			//registered
+			if (registered != null)
+			{
+				System.out.print( cu.ltrim( registered.get( "value" ), 10 ) );
+				Long dwellTime = Long.parseLong( registered.get( "dwellTime" ).toString() ) + 4*60*60*1000;
+				System.out.print( cu.ltrim( displayTime( new Date(dwellTime) ), 9 ));
+			} else {
+				System.out.print( cu.ltrim( " ", 10 ));
+				System.out.print( cu.ltrim( " ", 9 ));
+			}
+			System.out.print ("|");
+
+			//enode
+			if (enode != null)
+			{
+				System.out.print( cu.ltrim( enode.get( "value" ), 10 ) );
+				Long dwellTime = Long.parseLong( enode.get( "dwellTime" ).toString() ) + 4*60*60*1000;
+				System.out.print( cu.ltrim( displayTime( new Date(dwellTime) ), 9 ));
+			} else {
+				System.out.print( cu.ltrim( " ", 10 ));
+				System.out.print( cu.ltrim( " ", 9 ));
+			}
+			System.out.print ("|");
+
+			System.out.println( "|" );
+
+		}
+		System.out.println();
+	}
 
 
 	public String getZone1( String serialNumber, Long time)
@@ -500,6 +616,75 @@ public class bugs implements controllerInterface
 	}
 
 
+	public void sendBlinkChangingStatus(String topic, Long time, String serialNumber, Integer retries )
+	{
+		StringBuffer sb = new StringBuffer();
+		Random r = new Random();
+
+		sequenceNumber = cu.getSequenceNumber();
+		sb.append( " sn," + sequenceNumber + "\n" );
+		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
+
+		System.out.println(	cu.blue() + "sn," + sequenceNumber + cu.black() );
+
+		int zr = r.nextInt( 100 )%4;
+
+		String zoneValue = "";
+		switch( zr ) {
+			case 0 : zoneValue = getZone1( serialNumber, time );
+				break;
+			case 1 : zoneValue = getZone2( serialNumber, time );
+				break;
+			case 2 : zoneValue = getZone3( serialNumber, time );
+				break;
+			case 3 : zoneValue = getZone4( serialNumber, time );
+				break;
+		}
+		sb.append( zoneValue );
+
+		System.out.print(  zoneValue );
+
+		//status
+		String statusValue = "changeStatus";
+		if (retries >= 2) {
+			statusValue = "SapSync";
+		}
+		sb.append( serialNumber + "," + time + ",status," + statusValue + "\n" );
+
+		System.out.println(  serialNumber + "," + time + ",status," + statusValue  );
+
+		//retries - registered
+		String retriesValue = "" + retries;
+		sb.append( serialNumber + "," + time + ",registered," + retriesValue + "\n" );
+
+		System.out.println(  serialNumber + "," + time + ",registered," + retriesValue  );
+
+		cu.publishSyncMessage( topic, sb.toString() );
+		System.out.println( );
+
+	}
+
+	public void sendBlinkChangingEnode(String topic, Long time, String serialNumber, String message )
+	{
+		StringBuffer sb = new StringBuffer();
+		Random r = new Random();
+
+		sequenceNumber = cu.getSequenceNumber();
+		sb.append( " sn," + sequenceNumber + "\n" );
+		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
+
+		System.out.println(	cu.blue() + "sn," + sequenceNumber + cu.black() );
+
+		//enode
+		sb.append( serialNumber + "," + time + ",eNode," + message + "\n" );
+
+		System.out.println(  serialNumber + "," + time + ",eNode," + message  );
+
+		cu.publishSyncMessage( topic, sb.toString() );
+		System.out.println( );
+
+	}
+
 	public void sendBlinkInvalidNativeObjects(String topic, Long time, String serialNumber )
 	{
 		StringBuffer sb = new StringBuffer();
@@ -528,6 +713,35 @@ public class bugs implements controllerInterface
 		cu.publishSyncMessage( topic, sb.toString() );
 	}
 
+	public void sendSimpleBlinks(String topic, Long time, String serialNumber )
+	{
+		StringBuffer sb = new StringBuffer();
+		Random r = new Random();
+
+		sequenceNumber = cu.getSequenceNumber();
+		sb.append( " sn," + sequenceNumber + "\n" );
+		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
+
+		//System.out.println(	cu.blue() + "sn," + sequenceNumber + cu.black() + " " + serialNumber);
+
+			int zr = r.nextInt( 100 )%4;
+
+			String zoneValue = "";
+			switch( zr ) {
+				case 0 : zoneValue = getZone1(serialNumber, time);
+					break;
+				case 1 : zoneValue = getZone2( serialNumber, time );
+					break;
+				case 2 : zoneValue = getZone3( serialNumber, time );
+					break;
+				case 3 : zoneValue = getZone4( serialNumber, time );
+					break;
+			}
+			sb.append( zoneValue );
+
+		cu.publishSyncMessage( topic, sb.toString() );
+	}
+
 	public void pressAnyKey()
 	{
 		System.out.println(cu.black() +  "\npress [enter] to continue");
@@ -540,6 +754,17 @@ public class bugs implements controllerInterface
 	{
 		Date now = new Date();
 		while( now.getTime() % 10000 != 0 )
+		{
+			now = new Date();
+		}
+		;
+		return now.getTime();
+	}
+
+	public long getNextSecond5()
+	{
+		Date now = new Date();
+		while( now.getTime() % 5000 != 0 )
 		{
 			now = new Date();
 		}
@@ -646,6 +871,149 @@ public class bugs implements controllerInterface
 		cu.diffThings(cu.getThing(serialNumber, defaultRfidThingTypeCode), prevThing);
 	}
 
+	public void duplicateTickles()
+	{
+		//send blinks blinks each 10 seconds, modifying zone and logicalreader
+		//wait for a change in UI
+		//send one blink changing logical reader
+		//send second blink changing zone
+		//show results
+
+
+		String serialNumber;
+
+		final String defaultRfidThingTypeCode = "default_rfid_thingtype";
+
+		lastSerialNumber = cu.getLastSerialForThingType(defaultRfidThingTypeCode);
+
+		lastSerialNumber = cu.formatSerialNumber( cu.prompt( "enter serialNumber", lastSerialNumber ));
+		serialNumber = lastSerialNumber;
+
+		String topic = "/v1/data/ALEB/" + defaultRfidThingTypeCode;
+		Long time, firstTime, firstFiveTime, nextFiveTime;
+
+		System.out.println( );
+		System.out.println( cu.blue() + "1. send five blinks each 10 seconds, with same timestamp modifying status, registered and eNode " + cu.black() );
+
+		time = getNextSecond10();
+		firstTime = time;
+
+		sendBlinkChangingStatus( topic, firstTime, serialNumber, 1 );
+		cu.sleep( 2000 );
+		showResultsExtended( serialNumber );
+
+		firstFiveTime = getNextSecond5();
+
+		sendBlinkChangingEnode( topic, firstFiveTime, serialNumber, "error1" );
+		cu.sleep( 2000 );
+		showResultsExtended( serialNumber );
+
+
+		getNextSecond10();
+		sendBlinkChangingStatus( topic, firstTime, serialNumber, 2 );
+		cu.sleep( 3000 );
+		showResultsExtended( serialNumber );
+
+		nextFiveTime = getNextSecond5();
+		sendBlinkChangingEnode( topic, nextFiveTime, serialNumber, "error2" );
+		cu.sleep( 2000 );
+		showResultsExtended( serialNumber );
+
+		getNextSecond10();
+		sendBlinkChangingStatus( topic, firstTime, serialNumber, 3);
+		cu.sleep( 3000 );
+		showResultsExtended( serialNumber );
+
+		nextFiveTime = getNextSecond5();
+		sendBlinkChangingEnode( topic, nextFiveTime, serialNumber, "error3" );
+		cu.sleep( 2000 );
+		showResultsExtended( serialNumber );
+
+		getNextSecond10();
+		sendBlinkChangingStatus( topic, firstTime, serialNumber, 4 );
+		cu.sleep( 3000 );
+		showResultsExtended( serialNumber );
+
+		nextFiveTime = getNextSecond5();
+		sendBlinkChangingEnode( topic, nextFiveTime, serialNumber, "error4" );
+		cu.sleep( 2000 );
+		showResultsExtended( serialNumber );
+
+
+		getNextSecond10();
+		sendBlinkChangingStatus( topic, firstTime, serialNumber, 5);
+		cu.sleep( 3000 );
+		showResultsExtended( serialNumber );
+
+		nextFiveTime = getNextSecond5();
+		sendBlinkChangingEnode( topic, nextFiveTime, serialNumber, "error5" );
+		cu.sleep( 2000 );
+		showResultsExtended( serialNumber );
+
+		System.out.println( cu.blue() + "complete" + cu.black() );
+		pressAnyKey();
+		showResults( serialNumber);
+
+
+	}
+
+	public void httpThreadPool()
+	{
+		//send blinks blinks each without delays to have the httpThread overloaded
+		cu.db.getCollection( "httpPoolTest" ).drop();
+
+		String serialNumber;
+		Long   baseSerialNumber;
+		//cu.getLogicalReaders();
+
+		final String defaultRfidThingTypeCode = "default_rfid_thingtype";
+
+		lastSerialNumber = cu.getLastSerialForThingType(defaultRfidThingTypeCode);
+
+		lastSerialNumber = cu.formatSerialNumber( cu.prompt( "enter serialNumber", lastSerialNumber ));
+		baseSerialNumber = Long.parseLong( lastSerialNumber);
+		serialNumber = lastSerialNumber;
+
+		Long thingsQuantity = 20L;
+		thingsQuantity = Long.parseLong( cu.prompt( "enter number of things to create", "" + thingsQuantity ));
+
+		Long blinksQuantity = 100L;
+		blinksQuantity = Long.parseLong( cu.prompt( "enter number of blinks for each thing", "" + blinksQuantity ));
+
+
+		System.out.println( );
+		System.out.println( cu.blue() + "1. create things and update them.  Be sure that an esper rule is active for default_rfid_thingtype " + cu.black() );
+
+		String topic = "/v1/data/ALEB/" + defaultRfidThingTypeCode;
+
+		startDate = new Date();
+		//iterate over the  things quantity, and the over the blinks
+		for (int iBlinksQuantity = 0; iBlinksQuantity < blinksQuantity.intValue(); iBlinksQuantity++ ) {
+			for (int iThingsQuantity = 0; iThingsQuantity < thingsQuantity.intValue(); iThingsQuantity++ ) {
+				serialNumber = cu.formatSerialNumber( "" + (baseSerialNumber + iThingsQuantity) );
+				sendSimpleBlinks( topic, new Date().getTime(), serialNumber );
+			}
+			if (iBlinksQuantity % 10 == 0)
+			{
+				System.out.println( "sent " + cu.blue() + (thingsQuantity * iBlinksQuantity) + cu.black() + " blinks to core bridge" );
+			}
+		}
+		System.out.println( "sent " + cu.blue() + (thingsQuantity*blinksQuantity) + cu.black() + " blinks to core bridge" );
+
+		Long total = 0L;
+		while (total < thingsQuantity*blinksQuantity)
+		{
+			long diff = new Date().getTime() - startDate.getTime();
+			System.out.println ( String.format( "results after %4.1f secs", diff / 1000.0  ));
+			total = new Long( showHttpPoolResults() );
+			System.out.println("");
+			cu.sleep( 1900 );
+		}
+
+		System.out.println( cu.blue() + "complete" + cu.black() );
+		pressAnyKey();
+	}
+
 	public void execute() {
 		setup();
 		HashMap<String, String> options = new LinkedHashMap<String,String>();
@@ -655,6 +1023,8 @@ public class bugs implements controllerInterface
 		options.put("3", "RIOT-6337 Queued Mqtt messages are processed multiple times");
 		options.put("4", "RIOT-6642 dwellTime value is not being calculated correctly for each blink");
 		options.put("5", "RIOT-6779 ignore zone field when its value does not match with any existing zone");
+		options.put("6", "RIOT-7385 Thing Tickle is generating duplicated values in Core Bridge");
+		options.put("7", "RIOT-6809 improve RestEndpointSubscriber to use a multi threaded HTTP service");
 		//options.put("9", "send a JSON to udf");
 
 		Integer option = 0;
@@ -684,6 +1054,16 @@ public class bugs implements controllerInterface
 				if (option == 4 )
 				{
 					ignoreInvalidNative();
+				}
+
+				if (option == 5 )
+				{
+					duplicateTickles();
+				}
+
+				if (option == 6 )
+				{
+					httpThreadPool();
 				}
 
 				System.out.println(cu.black() +  "\npress [enter] to continue");

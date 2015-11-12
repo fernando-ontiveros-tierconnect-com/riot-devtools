@@ -1,0 +1,26 @@
+{
+  "archived":false,
+  "name":"assets",
+  "thingTypeCode":"assets",
+  "thingTypeTemplateId": 1,
+  "children":[
+    1
+  ],
+  "child.ids" : [1],
+  "group.id":3,
+  "group" : {
+    "archived": false,
+    "code": "SM",
+    "treeLevel": 3,
+    "name": "Santa Monica",
+    "description": null
+  },
+  "autoCreate":true,
+  "fields":[
+    { "id":5,      "type":1,   "name":"brand",    "symbol":"",      "timeSeries":true,      "unit":""    },
+    { "id":12,     "type":1,   "name":"status",   "symbol":"",      "timeSeries":true,      "unit":""    },
+    { "id":4,      "type":1,   "name":"category", "symbol":"",      "timeSeries":true,      "unit":""    },
+    { "id":6,      "type":4,   "name":"usage",    "symbol":"h",     "timeSeries":false,     "unit":"millisecond"},
+    { "id":6,      "type":4,   "name":"price",    "symbol":"h",     "timeSeries":true,      "unit":"millisecond"}
+  ]
+}
