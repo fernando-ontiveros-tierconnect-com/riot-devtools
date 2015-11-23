@@ -88,7 +88,7 @@ public class Main {
 	{
 		cu.setupMongodb(mongoHost, mongoPort, mongoDatabase);
 
-		if (1 == 1 ) {return; }
+		//if (1 == 1 ) {return; }
 		/** Set up your blocking queues: Be sure to size these properly based on expected TPS of your stream */
 		BlockingQueue<String> msgQueue = new LinkedBlockingQueue<String>(100000);
 		BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<Event>(1000);
@@ -100,7 +100,7 @@ public class Main {
 
 		// Optional: set up some followings and track terms
 		//List<Long> followings = Lists.newArrayList(1234L, 566788L);
-		List<String> terms = Lists.newArrayList( "bolivia", "iot" );
+		List<String> terms = Lists.newArrayList( "bolivia", "iot", "FLL", "fll" );
 		//hosebirdEndpoint.followings(followings);
 		hosebirdEndpoint.trackTerms(terms);
 

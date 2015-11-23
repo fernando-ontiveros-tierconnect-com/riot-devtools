@@ -333,6 +333,69 @@ public class nativeObjects implements controllerInterface
 
 	}
 
+	private void sendJavaDataTypes()
+	{
+		StringBuffer sb = new StringBuffer();
+
+		Random r = new Random();
+		String serialNumber = "";
+
+		serialNumber = "000000000000000000000" + cu.prompt( "enter a serialNumber", lastSerialNumber );
+		lastSerialNumber = serialNumber.substring( serialNumber.length() - 21, serialNumber.length() );
+		serialNumber = lastSerialNumber;
+
+		multipleThingTypeCode = cu.prompt( "enter the thingTypeCode", multipleThingTypeCode );
+
+		String fruits[] = { "apples", "oranges", "bananas", "grapes", "strawberries", "watermelon", "pineapples" };
+		String commaValue = "";
+		for( int i = 0; i < r.nextInt( 2 ) + 2; i++ )
+		{
+			commaValue += (commaValue.equals( "" ) ? "" : ", ") + (r.nextInt( 10 ) + 1) + " " + fruits[r.nextInt( fruits.length - 1 )];
+		}
+
+
+		String topic = "/v1/data/ALEB/" + multipleThingTypeCode;
+
+		String stringValue;
+		Boolean booleanValue;
+		Long timestampValue;
+		Date dateValue;
+		Double numberValue;
+
+		stringValue    = commaValue;
+		booleanValue   = (r.nextInt(100) < 50 );
+		timestampValue = (new Date()).getTime()  - 1000*60*60*24*365;
+		dateValue      = new Date(timestampValue);
+		numberValue    = r.nextDouble() * 1000;
+
+		sequenceNumber = cu.getSequenceNumber();
+		Long time = new Date().getTime();
+		sb.append( " sn," + sequenceNumber + "\n" );
+		sb.append( ",0,___CS___,-118.443969;34.048092;0.0;20.0;ft\n" );
+
+		sb.append( serialNumber + "," + time + ",NumberData,"    + numberValue + "\n" );
+		sb.append( serialNumber + "," + time + ",DateData,"      + dateValue.getTime() + "\n" );
+		sb.append( serialNumber + "," + time + ",TimestampData," + timestampValue + "\n" );
+		sb.append( serialNumber + "," + time + ",StringData,"    + "\"" + stringValue + "\"\n" );
+		sb.append( serialNumber + "," + time + ",BooleanData,"    + booleanValue + "\n" );
+
+		System.out.println( " serialNumber: " + cu.blue() + serialNumber   + cu.black() + "" );
+		System.out.println( "thingTypeCode: " + cu.blue() + multipleThingTypeCode + cu.black() + "" );
+		System.out.println( "   NumberData: " + cu.blue() + numberValue    + cu.black() + "" );
+		System.out.println( "     DateData: " + cu.blue() + dateValue      + cu.black() + "" );
+		System.out.println( "TimestampData: " + cu.blue() + timestampValue + cu.black() + "" );
+		System.out.println( "   StringData: " + cu.blue() + stringValue    + cu.black() + "" );
+		System.out.println( "  BooleanData: " + cu.blue() + booleanValue   + cu.black() + "" );
+
+		DBObject prevThing = cu.getThing( serialNumber, multipleThingTypeCode );
+
+		cu.publishSyncMessage( topic, sb.toString() );
+		cu.sleep( 1000 );
+
+		DBObject newThing = cu.getThing( serialNumber, multipleThingTypeCode );
+		cu.diffThings( newThing, prevThing );
+	}
+
 	private void sendCommasBlink()
 	{
 		StringBuffer sb = new StringBuffer();
@@ -1066,7 +1129,8 @@ public class nativeObjects implements controllerInterface
 		options.put("4", "send simple Zone");
 		options.put("5", "send simple Shift");
 		options.put("6", "send simple Group");
-		options.put("7", "send multiple LogicalReader");
+		//options.put("7", "send multiple LogicalReader");
+		options.put("7", "send Java Data types");
 		options.put("8", "send multiple Shift");
 		options.put("9", "send thing type");
 		//options.put("9", "send a JSON to udf");
@@ -1100,7 +1164,8 @@ public class nativeObjects implements controllerInterface
 				}
 
 				if (option == 6) {
-					sendMultipleLogicalReaderBlink();
+					//sendMultipleLogicalReaderBlink();
+					sendJavaDataTypes();
 				}
 
 				if (option == 7) {
