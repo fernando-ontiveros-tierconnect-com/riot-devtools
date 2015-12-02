@@ -17,10 +17,10 @@
   },
   "autoCreate":true,
   "fields":[
-    { "id":5,      "type":1,   "name":"brand",    "symbol":"",      "timeSeries":true,      "unit":""    },
-    { "id":12,     "type":1,   "name":"status",   "symbol":"",      "timeSeries":true,      "unit":""    },
-    { "id":4,      "type":1,   "name":"category", "symbol":"",      "timeSeries":true,      "unit":""    },
-    { "id":6,      "type":4,   "name":"usage",    "symbol":"h",     "timeSeries":false,     "unit":"millisecond"},
-    { "id":6,      "type":4,   "name":"price",    "symbol":"h",     "timeSeries":true,      "unit":"millisecond"}
+    { "id":5,      "type":1,   "name":"brand",    "symbol":"",      "timeSeries":true,  "defaultValue": "", "unit":""    },
+    { "id":12,     "type":1,   "name":"status",   "symbol":"",      "timeSeries":true,  "defaultValue": "", "unit":""    },
+    { "id":4,      "type":1,   "name":"category", "symbol":"",      "timeSeries":true,  "defaultValue": "", "unit":""    },
+    { "id":6,      "type":4,   "name":"usage",    "symbol":"h",     "timeSeries":false, "defaultValue": "", "unit":"millisecond"},
+    { "id":6,      "type":4,   "name":"price",    "symbol":"h",     "timeSeries":true,  "defaultValue": "", "unit":"millisecond"}
   ]
 }
